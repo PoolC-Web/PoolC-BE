@@ -1,3 +1,3 @@
-FROM openjdk:11-jdk-slim
+FROM eclipse-temurin:11-jre-jammy
 COPY build/libs/app.jar app.jar
 ENTRYPOINT ["java","-jar","/app.jar"]
