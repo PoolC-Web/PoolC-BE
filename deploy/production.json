@@ -1,0 +1,6 @@
+{
+  "awsRegion": "ap-northeast-2",
+  "githubOidcRoleArn": "arn:aws:iam::238851005341:role/PoolCGitHubBackendProductionDeploy",
+  "ecrRepository": "poolc-backend",
+  "ssmManagedInstanceId": "mi-0f0a931f1d8415e2b"
+}

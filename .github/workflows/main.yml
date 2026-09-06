@@ -13,12 +13,6 @@ concurrency:
   group: poolc-backend-production
   cancel-in-progress: false
 
-env:
-  AWS_REGION: ap-northeast-2
-  ECR_BACKEND_REPOSITORY: ${{ vars.ECR_BACKEND_REPOSITORY }}
-  BACKEND_SECRET_ID: ${{ vars.BACKEND_SECRET_ID }}
-  SSM_BACKEND_INSTANCE_ID: ${{ vars.SSM_BACKEND_INSTANCE_ID }}
-
 jobs:
   test:
     name: Test and package backend
@@ -40,6 +34,12 @@ jobs:
           --health-retries 20
     steps:
       - uses: actions/checkout@v4
+      - id: config
+        name: Read deployment configuration
+        run: |
+          echo "aws_region=$(jq -r '.awsRegion' deploy/production.json)" >> "$GITHUB_OUTPUT"
+          echo "role_arn=$(jq -r '.githubOidcRoleArn' deploy/production.json)" >> "$GITHUB_OUTPUT"
+          echo "ecr_repository=$(jq -r '.ecrRepository' deploy/production.json)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -72,17 +72,23 @@ jobs:
     needs: test
     runs-on: ubuntu-24.04
     outputs:
-      image_uri: ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND_REPOSITORY }}:sha-${{ github.sha }}
+      image_uri: ${{ steps.ecr-login.outputs.registry }}/${{ steps.config.outputs.ecr_repository }}:sha-${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
+      - id: config
+        name: Read deployment configuration
+        run: |
+          echo "aws_region=$(jq -r '.awsRegion' deploy/production.json)" >> "$GITHUB_OUTPUT"
+          echo "role_arn=$(jq -r '.githubOidcRoleArn' deploy/production.json)" >> "$GITHUB_OUTPUT"
+          echo "ecr_repository=$(jq -r '.ecrRepository' deploy/production.json)" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
           name: poolc-backend-jar
           path: build/libs
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ steps.config.outputs.role_arn }}
+          aws-region: ${{ steps.config.outputs.aws_region }}
       - uses: aws-actions/amazon-ecr-login@v2
         id: ecr-login
       - uses: docker/setup-buildx-action@v3
@@ -91,8 +97,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND_REPOSITORY }}:production
-            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND_REPOSITORY }}:sha-${{ github.sha }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ steps.config.outputs.ecr_repository }}:sha-${{ github.sha }}
 
   deploy:
     name: Deploy through SSM Run Command
@@ -100,30 +105,34 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - id: config
+        name: Read deployment configuration
+        run: |
+          echo "aws_region=$(jq -r '.awsRegion' deploy/production.json)" >> "$GITHUB_OUTPUT"
+          echo "role_arn=$(jq -r '.githubOidcRoleArn' deploy/production.json)" >> "$GITHUB_OUTPUT"
+          echo "ssm_instance_id=$(jq -r '.ssmManagedInstanceId' deploy/production.json)" >> "$GITHUB_OUTPUT"
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ steps.config.outputs.role_arn }}
+          aws-region: ${{ steps.config.outputs.aws_region }}
       - name: Update Lightsail without SSH
         env:
           ECR_IMAGE: ${{ needs.image.outputs.image_uri }}
         run: |
           compose_base64="$(base64 < deploy/lightsail/docker-compose.production.yaml | tr -d '\n')"
           ecr_registry="${ECR_IMAGE%%/*}"
+          ecr_password_base64="$(aws ecr get-login-password --region "${{ steps.config.outputs.aws_region }}" | base64 -w 0)"
           command_lines="$(jq -cn \
             --arg compose "$compose_base64" \
             --arg image "$ECR_IMAGE" \
             --arg registry "$ecr_registry" \
-            --arg region "$AWS_REGION" \
-            --arg secret "$BACKEND_SECRET_ID" \
+            --arg password "$ecr_password_base64" \
             '[
               "set -euo pipefail",
               "install -d -m 700 /home/ubuntu/backend",
               "printf %s \($compose) | base64 -d > /home/ubuntu/backend/docker-compose.production.yaml",
               "chmod 600 /home/ubuntu/backend/docker-compose.production.yaml",
-              "aws ecr get-login-password --region \($region) | docker login --username AWS --password-stdin \($registry)",
-              "umask 077",
-              "aws secretsmanager get-secret-value --region \($region) --secret-id \($secret) --query SecretString --output text > /home/ubuntu/backend/.env.production",
+              "printf %s \($password) | base64 -d | docker login --username AWS --password-stdin \($registry)",
               "cd /home/ubuntu/backend",
               "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml pull palkia",
               "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml up -d --no-deps palkia",
@@ -132,11 +141,11 @@ jobs:
             ]')"
           command_id="$(aws ssm send-command \
             --document-name AWS-RunShellScript \
-            --instance-ids "$SSM_BACKEND_INSTANCE_ID" \
+            --instance-ids "${{ steps.config.outputs.ssm_instance_id }}" \
             --parameters "{\"commands\":$command_lines}" \
             --comment "Deploy PoolC backend $GITHUB_SHA" \
             --query 'Command.CommandId' \
             --output text)"
-          aws ssm wait command-executed --command-id "$command_id" --instance-id "$SSM_BACKEND_INSTANCE_ID"
-          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$SSM_BACKEND_INSTANCE_ID" \
+          aws ssm wait command-executed --command-id "$command_id" --instance-id "${{ steps.config.outputs.ssm_instance_id }}"
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id "${{ steps.config.outputs.ssm_instance_id }}" \
             --query '{Status:Status,StandardOutput:StandardOutputContent,StandardError:StandardErrorContent}' --output json
