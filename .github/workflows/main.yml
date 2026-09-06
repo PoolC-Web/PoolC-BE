@@ -128,7 +128,7 @@ jobs:
             --arg registry "$ecr_registry" \
             --arg password "$ecr_password_base64" \
             '[
-              "set -euo pipefail",
+              "set -eu",
               "install -d -m 700 /home/ubuntu/backend",
               "printf %s \($compose) | base64 -d > /home/ubuntu/backend/docker-compose.production.yaml",
               "chmod 600 /home/ubuntu/backend/docker-compose.production.yaml",
