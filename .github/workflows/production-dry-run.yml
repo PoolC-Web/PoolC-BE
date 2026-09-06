@@ -1,0 +1,80 @@
+name: Production dry run (backend)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: poolc_test
+          POSTGRES_USER: poolc
+          POSTGRES_PASSWORD: poolc_dev_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U poolc -d poolc_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - id: config
+        name: Read deployment configuration
+        run: |
+          echo "aws_region=$(jq -r '.awsRegion' deploy/production.json)" >> "$GITHUB_OUTPUT"
+          echo "role_arn=$(jq -r '.githubOidcDryRunRoleArn' deploy/production.json)" >> "$GITHUB_OUTPUT"
+          echo "ecr_repository=$(jq -r '.ecrRepository' deploy/production.json)" >> "$GITHUB_OUTPUT"
+          echo "ssm_instance_id=$(jq -r '.ssmManagedInstanceId' deploy/production.json)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+          cache: gradle
+      - name: Run tests and package application
+        env:
+          DB_HOST: localhost:5432
+          TEST_DB_NAME: poolc_test
+          DB_USER_NAME: poolc
+          DB_PASSWORD: poolc_dev_password
+          PROJECT_NAME_HERE_SECRET_KEY: ci_test_secret_key
+          EXPIRE_LENGTH_IN_MILLISECONDS: "3600000"
+          FILE_DIR: ${{ runner.temp }}/poolc-files
+          EMAIL_ADDRESS: ci@example.com
+          EMAIL_PASSWORD: dummy
+          NAVER_BOOK_API_URL: https://openapi.naver.com/v1/search/book.json
+          NAVER_BOOK_CLIENT_ID: dummy
+          NAVER_BOOK_CLIENT_SECRET: dummy
+          KUBERNETES_API_KEY: local-ci
+        run: ./gradlew test bootJar --no-daemon
+      - name: Build image without publishing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ steps.config.outputs.role_arn }}
+          aws-region: ${{ steps.config.outputs.aws_region }}
+      - name: Verify ECR repository
+        run: aws ecr describe-repositories --repository-names "${{ steps.config.outputs.ecr_repository }}" --query 'repositories[0].repositoryUri' --output text
+      - name: Verify SSM deployment path without changing runtime
+        run: |
+          command_id="$(aws ssm send-command \
+            --document-name AWS-RunShellScript \
+            --instance-ids "${{ steps.config.outputs.ssm_instance_id }}" \
+            --parameters 'commands=["printf dry-run-ok"]' \
+            --comment "Validate PoolC backend production deployment path" \
+            --query 'Command.CommandId' \
+            --output text)"
+          aws ssm wait command-executed --command-id "$command_id" --instance-id "${{ steps.config.outputs.ssm_instance_id }}"
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id "${{ steps.config.outputs.ssm_instance_id }}" \
+            --query '{Status:Status,Output:StandardOutputContent}' --output json
