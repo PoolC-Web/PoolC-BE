@@ -2,7 +2,9 @@ package org.poolc.api.member.service;
 
 import lombok.RequiredArgsConstructor;
 import net.bytebuddy.utility.RandomString;
+import org.poolc.api.activity.domain.Session;
 import org.poolc.api.activity.dto.ActivityResponse;
+import org.poolc.api.activity.repository.SessionRepository;
 import org.poolc.api.activity.service.ActivityService;
 import org.poolc.api.auth.exception.UnauthorizedException;
 import org.poolc.api.auth.infra.PasswordHashProvider;
@@ -13,6 +15,8 @@ import org.poolc.api.member.domain.MemberRoles;
 import org.poolc.api.member.dto.MemberResetRequest;
 import org.poolc.api.member.dto.MemberResponse;
 import org.poolc.api.member.dto.MemberResponseWithHour;
+import org.poolc.api.member.dto.MyActivityDetailResponse;
+import org.poolc.api.member.dto.MyActivitySummaryResponse;
 import org.poolc.api.member.dto.UpdateMemberRequest;
 import org.poolc.api.member.exception.DuplicateMemberException;
 import org.poolc.api.member.exception.WrongPasswordException;
@@ -21,11 +25,13 @@ import org.poolc.api.member.repository.MemberRepository;
 import org.poolc.api.member.vo.MemberCreateValues;
 import org.poolc.api.poolc.domain.Poolc;
 import org.poolc.api.poolc.service.PoolcService;
+import org.poolc.api.project.repository.ProjectRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -37,6 +43,9 @@ public class MemberService {
     private final PasswordHashProvider passwordHashProvider;
     private final MemberQueryRepository memberQueryRepository;
     private final ActivityService activityService;
+    private final SessionRepository sessionRepository;
+    private final ProjectRepository projectRepository;
+    private final MemberResponseAssembler memberResponseAssembler;
 //    private final MailService mailService;
     private final PoolcService poolcService;
 
@@ -78,14 +87,14 @@ public class MemberService {
         List<Member> members = getAllMembers();
         return members.stream()
                 .filter(responseMember -> (!Optional.ofNullable(loginMember).isEmpty() && loginMember.isAdmin() || !responseMember.shouldHide()))
-                .map(MemberResponse::of)
+                .map(memberResponseAssembler::of)
                 .collect(Collectors.toList());
     }
 
     public List<MemberResponse> getAllMembersResponseByName(String name) {
         return memberRepository.findByName(name)
                 .stream()
-                .map(MemberResponse::of)
+                .map(memberResponseAssembler::of)
                 .collect(Collectors.toList());
     }
 
@@ -133,19 +142,38 @@ public class MemberService {
     }
     // TODO: 이부분 좀 더 깨끗하게 Refactoring해야할 거 같다.
 
+    @Transactional
     public List<MemberResponseWithHour> getHoursWithMembers() {
-        List<MemberResponseWithHour> list = new ArrayList<>();
-        Map<Member, Long> map = new HashMap<>();
-        getAllMembersAndUpdateMemberIsExcepted().forEach(m -> map.put(m, 0L));
-
         YearSemester yearSemester = YearSemester.of(LocalDate.now());
-        LocalDate startDate = yearSemester.getFirstDateFromYearSemester();
-        LocalDate endDate = yearSemester.getLastDateFromYearSemester();
-        memberQueryRepository.getHours(startDate, endDate).forEach(m -> map.replace(getMemberByLoginID(m.getKey()), m.getValue()));
+        Map<String, BigDecimal> recognizedHoursByLoginId = new HashMap<>();
+        List<Member> members = getAllMembersAndUpdateMemberIsExcepted();
+        members.forEach(member -> recognizedHoursByLoginId.put(member.getLoginID(), BigDecimal.ZERO));
 
-        map.forEach((member, hour) -> list.add(MemberResponseWithHour.of(member, hour)));
+        List<Session> sessions = sessionRepository.findAllWithActivityAndAttendanceInSemester(
+                yearSemester.getFirstDateFromYearSemester(),
+                yearSemester.getLastDateFromYearSemester(),
+                LocalDate.now()
+        );
+        for (Session session : sessions) {
+            String hostLoginId = session.getActivity().getHost().getLoginID();
+            addRecognizedHours(recognizedHoursByLoginId, hostLoginId, getSessionRecognizedHours(session, hostLoginId));
 
-        return list.stream().sorted(Comparator.comparing(o -> o.getMember().getName())).collect(Collectors.toList());
+            for (String attendeeLoginId : session.getAttendedMemberLoginIDs()) {
+                if (!attendeeLoginId.equals(hostLoginId)) {
+                    addRecognizedHours(recognizedHoursByLoginId, attendeeLoginId, getSessionRecognizedHours(session, attendeeLoginId));
+                }
+            }
+        }
+
+        projectRepository.findAll().stream()
+                .filter(project -> isInSemester(project.getStartDate(), yearSemester))
+                .forEach(project -> project.getMemberLoginIDs()
+                        .forEach(loginId -> addRecognizedHours(recognizedHoursByLoginId, loginId, BigDecimal.TEN)));
+
+        return members.stream()
+                .map(member -> MemberResponseWithHour.of(member, recognizedHoursByLoginId.get(member.getLoginID())))
+                .sorted(Comparator.comparing(response -> response.getMember().getName()))
+                .collect(Collectors.toList());
     }
 
     public Long getMyHour(Member member){
@@ -153,6 +181,91 @@ public class MemberService {
         LocalDate startDate = yearSemester.getFirstDateFromYearSemester();
         LocalDate endDate = yearSemester.getLastDateFromYearSemester();
         return memberQueryRepository.getMyHour(member, startDate, endDate);
+    }
+
+    @Transactional(readOnly = true)
+    public MyActivitySummaryResponse getMyActivitySummary(Member member) {
+        YearSemester yearSemester = YearSemester.of(LocalDate.now());
+        List<Session> sessions = sessionRepository.findAllWithActivityAndAttendanceInSemester(
+                yearSemester.getFirstDateFromYearSemester(),
+                yearSemester.getLastDateFromYearSemester(),
+                LocalDate.now()
+        );
+
+        BigDecimal seminarStudyHours = BigDecimal.ZERO;
+        Map<Long, Session> sessionsByActivityId = new HashMap<>();
+        Map<Long, BigDecimal> recognizedHoursByActivityId = new HashMap<>();
+
+        for (Session session : sessions) {
+            boolean hosted = session.getActivity().getHost().getLoginID().equals(member.getLoginID());
+            boolean attended = session.getAttendedMemberLoginIDs().contains(member.getLoginID());
+
+            if (!hosted && !attended) {
+                continue;
+            }
+
+            BigDecimal recognizedHours = getSessionRecognizedHours(session, member.getLoginID());
+            seminarStudyHours = seminarStudyHours.add(recognizedHours);
+            Long activityId = session.getActivity().getId();
+            sessionsByActivityId.putIfAbsent(activityId, session);
+            recognizedHoursByActivityId.merge(activityId, recognizedHours, BigDecimal::add);
+        }
+
+        List<MyActivityDetailResponse> seminarStudyActivities = sessionsByActivityId.values().stream()
+                .map(session -> MyActivityDetailResponse.builder()
+                        .activityId(session.getActivity().getId())
+                        .title(session.getActivity().getTitle())
+                        .recognizedHours(recognizedHoursByActivityId.get(session.getActivity().getId()))
+                        .hosted(session.getActivity().getHost().getLoginID().equals(member.getLoginID()))
+                        .build())
+                .sorted(Comparator.comparing(MyActivityDetailResponse::getTitle))
+                .collect(Collectors.toList());
+
+        List<MyActivityDetailResponse> projectActivities = projectRepository.findProjectsByProjectMembers(member.getLoginID()).stream()
+                .filter(project -> isInSemester(project.getStartDate(), yearSemester))
+                .map(project -> MyActivityDetailResponse.builder()
+                        .activityId(project.getId())
+                        .title(project.getName())
+                        .recognizedHours(BigDecimal.TEN)
+                        .hosted(false)
+                        .build())
+                .sorted(Comparator.comparing(MyActivityDetailResponse::getTitle))
+                .collect(Collectors.toList());
+        BigDecimal projectHours = BigDecimal.TEN.multiply(BigDecimal.valueOf(projectActivities.size()));
+
+        return MyActivitySummaryResponse.builder()
+                .totalHours(seminarStudyHours.add(projectHours))
+                .seminarStudyHours(seminarStudyHours)
+                .officialActivityHours(BigDecimal.ZERO)
+                .projectHours(projectHours)
+                .seminarStudyActivities(seminarStudyActivities)
+                .officialActivities(Collections.emptyList())
+                .projectActivities(projectActivities)
+                .build();
+    }
+
+    private boolean isInSemester(LocalDate startDate, YearSemester yearSemester) {
+        return startDate != null
+                && !startDate.isBefore(yearSemester.getFirstDateFromYearSemester())
+                && !startDate.isAfter(yearSemester.getLastDateFromYearSemester());
+    }
+
+    private BigDecimal getSessionRecognizedHours(Session session, String loginId) {
+        boolean hosted = session.getActivity().getHost().getLoginID().equals(loginId);
+        boolean attended = session.getAttendedMemberLoginIDs().contains(loginId);
+
+        if (!hosted && !attended) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal sessionHours = BigDecimal.valueOf(session.getHour());
+        return hosted ? sessionHours.multiply(new BigDecimal("2.5")) : sessionHours;
+    }
+
+    private void addRecognizedHours(Map<String, BigDecimal> recognizedHoursByLoginId, String loginId, BigDecimal recognizedHours) {
+        if (recognizedHours.signum() > 0 && recognizedHoursByLoginId.containsKey(loginId)) {
+            recognizedHoursByLoginId.merge(loginId, recognizedHours, BigDecimal::add);
+        }
     }
 
     public void authorizeMember(String loginID) {

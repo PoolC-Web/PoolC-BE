@@ -1,5 +1,6 @@
 package org.poolc.api.book.service;
 
+import org.poolc.api.book.domain.BookCategory;
 import org.poolc.api.book.domain.BookSearchOption;
 import org.poolc.api.book.domain.BookSortOption;
 import org.poolc.api.book.dto.request.CreateBookRequest;
@@ -11,8 +12,8 @@ import org.springframework.data.domain.Page;
 
 public interface BookService {
 
-    Page<BookResponse> getAllBooks(int page, BookSortOption option);
-    Page<BookResponse> searchBooks(int page, BookSearchOption option, String keyword, BookSortOption sortOption);
+    Page<BookResponse> getAllBooks(int page, BookSortOption option, BookCategory category);
+    Page<BookResponse> searchBooks(int page, BookSearchOption option, String keyword, BookSortOption sortOption, BookCategory category);
     void createBook(Member member, CreateBookRequest request);
     void deleteBook(Member member, Long id) throws Exception;
     void updateBook(Member member, Long id, UpdateBookRequest request) throws Exception;

@@ -35,7 +35,7 @@ public class PostService {
     public Post findById(Member member, Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchElementException("No post found with given post id."));
-        checkReadPermission(member, post.getBoardType());
+        checkReadPermission(member, BoardType.canonicalize(post.getBoardType()));
         post.getCommentList().sort(Comparator.comparing(Comment::getCreatedAt));
         return post;
     }
@@ -55,9 +55,10 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public GetBoardResponse findPostsByBoard(Member member, BoardType boardType, int page) {
-        checkReadPermission(member, boardType);
+        BoardType canonicalBoardType = BoardType.canonicalize(boardType);
+        checkReadPermission(member, canonicalBoardType);
         PageRequest pr = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Post> posts = postRepository.findByBoardType(boardType, pr);
+        Page<Post> posts = postRepository.findByBoardTypeIn(BoardType.storageTypesFor(canonicalBoardType), pr);
         if (posts.getNumberOfElements() == 0) return null;
         return new GetBoardResponse(
                 posts.getTotalPages(),
@@ -125,14 +126,14 @@ public class PostService {
         // postRepository.save(post);
     }
 
-    public GetBoardResponse searchPost(Member member, String keyword, int page) {
-        PageRequest pr = PageRequest.of(page, size);
-        Page<Post> posts = postRepository.findByTitleContainingOrBodyContaining(keyword, keyword, pr);
+    public GetBoardResponse searchPost(Member member, BoardType boardType, String keyword, int page) {
+        BoardType canonicalBoardType = BoardType.canonicalize(boardType);
+        checkReadPermission(member, canonicalBoardType);
+        PageRequest pr = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Post> posts = postRepository.findByBoardTypeInAndTitleContaining(BoardType.storageTypesFor(canonicalBoardType), keyword, pr);
         return new GetBoardResponse(
                 posts.getTotalPages(),
                 posts.stream()
-                        .filter(post -> checkReadPermissionBoolean(member, post.getBoardType()))
-                        .sorted(Comparator.comparing(Post::getCreatedAt).reversed())
                         .map(GetPostsResponse::of)
                         .collect(Collectors.toList())
         );
@@ -141,16 +142,17 @@ public class PostService {
 
     private void checkWritePermission(Member member, BoardType board) {
         if (!checkWritePermissionBoolean(member, board)) throw new UnauthorizedException("접근할 수 없습니다.");
-        else if(board == BoardType.NOTICE && !member.isAdmin()) throw new UnauthorizedException("임원진만 접근할 수 있습니다.");
+        else if (board == BoardType.NOTICE && !member.isAdmin()) throw new UnauthorizedException("임원진만 접근할 수 있습니다.");
     }
     private void checkReadPermission(Member user, BoardType board) {
-        if (user == null && board != BoardType.NOTICE) {
+        if (board != BoardType.NOTICE && (user == null || !user.isMember())) {
             throw new UnauthorizedException("접근할 수 없습니다.");
         }
     }
 
     private boolean checkReadPermissionBoolean(Member user, BoardType board) {
-        return user != null || board == BoardType.NOTICE;
+        if (board == BoardType.NOTICE) return true;
+        return user != null;
     }
 
     private boolean checkWritePermissionBoolean(Member user, BoardType board) {
