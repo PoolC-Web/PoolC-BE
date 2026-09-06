@@ -1,61 +1,128 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
-
-name: Java CI with Gradle
+name: Deploy backend to production
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
+  packages: write
+
+concurrency:
+  group: poolc-backend-production
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: poolc-web/poolc-be
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  test:
+    name: Test and package backend
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: poolc_test
+          POSTGRES_USER: poolc
+          POSTGRES_PASSWORD: poolc_dev_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U poolc -d poolc_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    - name: Build with Gradle
-      #uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
-      #with:
-      #  arguments: build
-      run: ./gradlew clean build --exclude-task test
-    - name: make directory for transfer
-      run: mkdir deploy
-    - name: Copy Jar
-      run: cp ./build/libs/*.jar ./deploy/
-    - name: copy file via ssh password
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        password: ${{ secrets.SSH_PASSWORD }}
-        key: ${{ secrets.KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        source: "./build/libs/*.jar"
-        target: /home/ubuntu/palkia/builds/
-    # - name: restart server
-    #   uses: appleboy/ssh-action@v1.0.0
-    #   with:
-    #     host: ${{ secrets.SERVER_HOST }}
-    #     username: ${{ secrets.SERVER_USER }}
-    #     password: ${{ secrets.SSH_PASSWORD }}
-    #     key: ${{ secrets.KEY }}
-    #     port: ${{ secrets.SSH_PORT }}
-    #     script: |
-    #       cd dockercompose/palkia
-    #       docker compose down
-    #       docker compose up -d --build
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+          cache: gradle
+      - name: Run tests and package application
+        env:
+          DB_HOST: localhost:5432
+          TEST_DB_NAME: poolc_test
+          DB_USER_NAME: poolc
+          DB_PASSWORD: poolc_dev_password
+          PROJECT_NAME_HERE_SECRET_KEY: ci_test_secret_key
+          EXPIRE_LENGTH_IN_MILLISECONDS: "3600000"
+          FILE_DIR: ${{ runner.temp }}/poolc-files
+          EMAIL_ADDRESS: ci@example.com
+          EMAIL_PASSWORD: dummy
+          NAVER_BOOK_API_URL: https://openapi.naver.com/v1/search/book.json
+          NAVER_BOOK_CLIENT_ID: dummy
+          NAVER_BOOK_CLIENT_SECRET: dummy
+          KUBERNETES_API_KEY: local-ci
+        run: ./gradlew test bootJar --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: poolc-backend-jar
+          path: build/libs/app.jar
+          if-no-files-found: error
+
+  image:
+    name: Build and publish image
+    needs: test
+    runs-on: ubuntu-24.04
+    outputs:
+      image_tag: sha-${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: poolc-backend-jar
+          path: build/libs
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: metadata
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=production
+            type=sha,prefix=sha-
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+
+  deploy:
+    name: Deploy immutable image to Lightsail
+    needs: image
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Lightsail SSH access
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_SSH_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$LIGHTSAIL_SSH_KEY" > ~/.ssh/lightsail
+          chmod 600 ~/.ssh/lightsail
+          ssh-keyscan -H "$LIGHTSAIL_HOST" >> ~/.ssh/known_hosts
+      - name: Deploy backend and restart Nginx
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_READ_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_TAG: ${{ needs.image.outputs.image_tag }}
+        run: |
+          scp -i ~/.ssh/lightsail deploy/lightsail/docker-compose.production.yaml \
+            "$LIGHTSAIL_USER@$LIGHTSAIL_HOST:/home/ubuntu/backend/docker-compose.production.yaml"
+          printf '%s' "$GHCR_READ_TOKEN" | ssh -i ~/.ssh/lightsail "$LIGHTSAIL_USER@$LIGHTSAIL_HOST" \
+            "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin"
+          ssh -i ~/.ssh/lightsail "$LIGHTSAIL_USER@$LIGHTSAIL_HOST" \
+            "cd /home/ubuntu/backend && IMAGE_TAG='$IMAGE_TAG' docker compose -f docker-compose.production.yaml pull palkia && IMAGE_TAG='$IMAGE_TAG' docker compose -f docker-compose.production.yaml up -d --no-deps palkia && docker compose -f docker-compose.production.yaml restart nginx && docker compose -f docker-compose.production.yaml ps"

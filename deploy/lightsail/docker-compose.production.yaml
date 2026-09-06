@@ -1,0 +1,25 @@
+services:
+  palkia:
+    image: ghcr.io/poolc-web/poolc-be:${IMAGE_TAG}
+    container_name: palkia
+    env_file:
+      - .env.production
+    ports:
+      - "8080:8080"
+    volumes:
+      - /home/ubuntu/file:/file
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: backend-nginx-1
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    depends_on:
+      - palkia
