@@ -71,10 +71,10 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.ecr-login.outputs.registry }}/${{ steps.config.outputs.ecr_repository }}:dryrun-${{ github.sha }}
+          tags: ${{ steps.ecr-login.outputs.registry }}/${{ steps.config.outputs.ecr_repository }}:dryrun-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Verify Lightsail ECR pull without changing runtime
         env:
-          ECR_IMAGE: ${{ steps.ecr-login.outputs.registry }}/${{ steps.config.outputs.ecr_repository }}:dryrun-${{ github.sha }}
+          ECR_IMAGE: ${{ steps.ecr-login.outputs.registry }}/${{ steps.config.outputs.ecr_repository }}:dryrun-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           ecr_registry="${ECR_IMAGE%%/*}"
           ecr_password_base64="$(aws ecr get-login-password | base64 -w 0)"
@@ -98,4 +98,4 @@ jobs:
           aws ssm wait command-executed --command-id "$command_id" --instance-id "${{ steps.config.outputs.ssm_instance_id }}"
           aws ssm get-command-invocation --command-id "$command_id" --instance-id "${{ steps.config.outputs.ssm_instance_id }}" \
             --query '{Status:Status,Output:StandardOutputContent}' --output json
-          aws ecr batch-delete-image --repository-name "${{ steps.config.outputs.ecr_repository }}" --image-ids imageTag="dryrun-${{ github.sha }}"
+          aws ecr batch-delete-image --repository-name "${{ steps.config.outputs.ecr_repository }}" --image-ids imageTag="dryrun-${{ github.run_id }}-${{ github.run_attempt }}"
