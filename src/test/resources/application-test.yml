@@ -26,8 +26,3 @@ search:
     url: "localhost"
     port: 9200
     scheme: "http"
-gitea:
-  login-ticket:
-    ttl-seconds: 60
-  proxy:
-    api-key: test-gitea-proxy-key

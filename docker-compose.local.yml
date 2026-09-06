@@ -62,8 +62,6 @@ services:
       NAVER_BOOK_CLIENT_ID: dummy
       NAVER_BOOK_CLIENT_SECRET: dummy
       KUBERNETES_API_KEY: local-dev
-      GITEA_LOGIN_TICKET_TTL_SECONDS: "60"
-      GITEA_PROXY_API_KEY: local-dev
     ports:
       - "8080:8080"
     volumes:
