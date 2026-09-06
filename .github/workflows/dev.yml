@@ -1,56 +1,75 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
-name: Java CI with Gradle
+name: Build staging backend image
+
 on:
   push:
-    branches: [ "dev" ]
+    branches: [dev]
 
 permissions:
   contents: read
+  packages: write
+
+concurrency:
+  group: poolc-backend-staging
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: poolc-web/poolc-be
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test-and-build:
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    - name: Build with Gradle
-      #uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
-      #with:
-      #  arguments: build
-      run: ./gradlew clean build --exclude-task test
-    - name: make directory for transfer
-      run: mkdir palkia
-    - name: Copy Jar
-      run: cp ./build/libs/*.jar ./palkia/
-    - name: copy file via ssh password
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.DEV_HOST }}
-        username: ${{ secrets.DEV_USER }}
-        password: ${{ secrets.DEV_PASSWORD }}
-        key: ${{ secrets.DEV_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        source: "./palkia/*.jar"
-        target: /home/jimmy/k8s/
-    - name: restart server
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.DEV_HOST }}
-        username: ${{ secrets.DEV_USER }}
-        password: ${{ secrets.DEV_PASSWORD }}
-        key: ${{ secrets.DEV_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        script: |
-          kubectl delete deployment palkia-deployment
-          kubectl apply -f ./k8s/palkia-deployment.yaml
-          kubectl rollout status deployment/palkia-deployment
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+          cache: gradle
+
+      - name: Run tests
+        run: ./gradlew test
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: metadata
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=dev
+            type=sha,prefix=sha-
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+
+      - name: Update PKS staging image
+        env:
+          GITOPS_TOKEN: ${{ secrets.POOLC_GITOPS_TOKEN }}
+          IMAGE_TAG: sha-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test -n "$GITOPS_TOKEN"
+          workdir="$(mktemp -d)"
+          git clone --depth=1 "https://x-access-token:${GITOPS_TOKEN}@github.com/PoolC-Web/PKS.git" "$workdir"
+          cd "$workdir"
+          sed -i "s#image: ghcr.io/poolc-web/poolc-be:[^[:space:]]*#image: ghcr.io/poolc-web/poolc-be:${IMAGE_TAG}#" environments/poolc/staging/manifests/backend.yaml
+          git config user.name "PoolC staging CI"
+          git config user.email "poolc-staging-ci@users.noreply.github.com"
+          git add environments/poolc/staging/manifests/backend.yaml
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore(staging): deploy backend ${IMAGE_TAG}"
+          git push
