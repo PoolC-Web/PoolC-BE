@@ -3,6 +3,7 @@ name: Build staging backend image
 on:
   push:
     branches: [dev]
+  workflow_dispatch:
 
 permissions:
   contents: read
