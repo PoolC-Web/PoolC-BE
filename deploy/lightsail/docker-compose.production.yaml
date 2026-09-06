@@ -1,6 +1,6 @@
 services:
   palkia:
-    image: ghcr.io/poolc-web/poolc-be:${IMAGE_TAG}
+    image: ${ECR_IMAGE}
     container_name: palkia
     env_file:
       - .env.production

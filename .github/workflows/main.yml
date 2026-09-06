@@ -7,15 +7,17 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  id-token: write
 
 concurrency:
   group: poolc-backend-production
   cancel-in-progress: false
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: poolc-web/poolc-be
+  AWS_REGION: ap-northeast-2
+  ECR_BACKEND_REPOSITORY: ${{ vars.ECR_BACKEND_REPOSITORY }}
+  BACKEND_SECRET_ID: ${{ vars.BACKEND_SECRET_ID }}
+  SSM_BACKEND_INSTANCE_ID: ${{ vars.SSM_BACKEND_INSTANCE_ID }}
 
 jobs:
   test:
@@ -66,63 +68,75 @@ jobs:
           if-no-files-found: error
 
   image:
-    name: Build and publish image
+    name: Build and publish ECR image
     needs: test
     runs-on: ubuntu-24.04
     outputs:
-      image_tag: sha-${{ github.sha }}
+      image_uri: ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND_REPOSITORY }}:sha-${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: poolc-backend-jar
           path: build/libs
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr-login
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
-        id: metadata
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=production
-            type=sha,prefix=sha-
       - uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND_REPOSITORY }}:production
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND_REPOSITORY }}:sha-${{ github.sha }}
 
   deploy:
-    name: Deploy immutable image to Lightsail
+    name: Deploy through SSM Run Command
     needs: image
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Configure Lightsail SSH access
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Update Lightsail without SSH
         env:
-          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
-          LIGHTSAIL_SSH_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          ECR_IMAGE: ${{ needs.image.outputs.image_uri }}
         run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$LIGHTSAIL_SSH_KEY" > ~/.ssh/lightsail
-          chmod 600 ~/.ssh/lightsail
-          ssh-keyscan -H "$LIGHTSAIL_HOST" >> ~/.ssh/known_hosts
-      - name: Deploy backend and restart Nginx
-        env:
-          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
-          LIGHTSAIL_USER: ${{ secrets.LIGHTSAIL_USER }}
-          GHCR_USERNAME: ${{ github.actor }}
-          GHCR_READ_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMAGE_TAG: ${{ needs.image.outputs.image_tag }}
-        run: |
-          scp -i ~/.ssh/lightsail deploy/lightsail/docker-compose.production.yaml \
-            "$LIGHTSAIL_USER@$LIGHTSAIL_HOST:/home/ubuntu/backend/docker-compose.production.yaml"
-          printf '%s' "$GHCR_READ_TOKEN" | ssh -i ~/.ssh/lightsail "$LIGHTSAIL_USER@$LIGHTSAIL_HOST" \
-            "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin"
-          ssh -i ~/.ssh/lightsail "$LIGHTSAIL_USER@$LIGHTSAIL_HOST" \
-            "cd /home/ubuntu/backend && IMAGE_TAG='$IMAGE_TAG' docker compose -f docker-compose.production.yaml pull palkia && IMAGE_TAG='$IMAGE_TAG' docker compose -f docker-compose.production.yaml up -d --no-deps palkia && docker compose -f docker-compose.production.yaml restart nginx && docker compose -f docker-compose.production.yaml ps"
+          compose_base64="$(base64 < deploy/lightsail/docker-compose.production.yaml | tr -d '\n')"
+          ecr_registry="${ECR_IMAGE%%/*}"
+          command_lines="$(jq -cn \
+            --arg compose "$compose_base64" \
+            --arg image "$ECR_IMAGE" \
+            --arg registry "$ecr_registry" \
+            --arg region "$AWS_REGION" \
+            --arg secret "$BACKEND_SECRET_ID" \
+            '[
+              "set -euo pipefail",
+              "install -d -m 700 /home/ubuntu/backend",
+              "printf %s \($compose) | base64 -d > /home/ubuntu/backend/docker-compose.production.yaml",
+              "chmod 600 /home/ubuntu/backend/docker-compose.production.yaml",
+              "aws ecr get-login-password --region \($region) | docker login --username AWS --password-stdin \($registry)",
+              "umask 077",
+              "aws secretsmanager get-secret-value --region \($region) --secret-id \($secret) --query SecretString --output text > /home/ubuntu/backend/.env.production",
+              "cd /home/ubuntu/backend",
+              "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml pull palkia",
+              "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml up -d --no-deps palkia",
+              "docker compose -f docker-compose.production.yaml restart nginx",
+              "docker compose -f docker-compose.production.yaml ps"
+            ]')"
+          command_id="$(aws ssm send-command \
+            --document-name AWS-RunShellScript \
+            --instance-ids "$SSM_BACKEND_INSTANCE_ID" \
+            --parameters "{\"commands\":$command_lines}" \
+            --comment "Deploy PoolC backend $GITHUB_SHA" \
+            --query 'Command.CommandId' \
+            --output text)"
+          aws ssm wait command-executed --command-id "$command_id" --instance-id "$SSM_BACKEND_INSTANCE_ID"
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$SSM_BACKEND_INSTANCE_ID" \
+            --query '{Status:Status,StandardOutput:StandardOutputContent,StandardError:StandardErrorContent}' --output json
