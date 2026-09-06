@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 import org.poolc.api.common.exception.ConflictException;
 import org.poolc.api.common.domain.YearSemester;
 import org.poolc.api.gamification.domain.BallTransaction;
@@ -138,8 +139,8 @@ class GamificationServiceTest {
                 .thenReturn(0L);
         when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(1L);
         for (CollectibleRarity rarity : CollectibleRarity.values()) {
-            when(collectibleCatalogRepository.findUncollectedVariantByMemberUuidAndRarity("member-uuid", rarity, false))
-                    .thenReturn(Collections.emptyList());
+            when(collectibleCatalogRepository.existsUncollectedVariantByMemberUuidAndRarity("member-uuid", rarity, false))
+                    .thenReturn(false);
         }
 
         assertThatThrownBy(() -> service.draw(member)).isInstanceOf(ConflictException.class)
@@ -158,12 +159,10 @@ class GamificationServiceTest {
                 eq("member-uuid"), eq(BallTransactionType.ACTIVITY_HOUR_REWARD), eq("ACTIVITY_HOURS"), eq(currentSemester())))
                 .thenReturn(0L);
         when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(1L);
-        when(collectibleCatalogRepository.findUncollectedVariantByMemberUuidAndRarity("member-uuid", CollectibleRarity.COMMON, false))
+        when(collectibleCatalogRepository.existsUncollectedVariantByMemberUuidAndRarity("member-uuid", CollectibleRarity.COMMON, false))
+                .thenReturn(true);
+        when(collectibleCatalogRepository.findUncollectedVariantByMemberUuidAndRarity(eq("member-uuid"), eq(CollectibleRarity.COMMON), eq(false), any(Pageable.class)))
                 .thenReturn(List.of(collectible));
-        for (CollectibleRarity rarity : List.of(CollectibleRarity.RARE, CollectibleRarity.EPIC, CollectibleRarity.LEGENDARY)) {
-            when(collectibleCatalogRepository.findUncollectedVariantByMemberUuidAndRarity("member-uuid", rarity, false))
-                    .thenReturn(Collections.emptyList());
-        }
         when(collectionDrawRepository.save(any(CollectionDraw.class))).thenReturn(savedDraw);
         when(savedDraw.getId()).thenReturn(1L);
         when(savedDraw.getCollectible()).thenReturn(collectible);
@@ -190,12 +189,10 @@ class GamificationServiceTest {
                 eq("member-uuid"), eq(BallTransactionType.ACTIVITY_HOUR_REWARD), eq("ACTIVITY_HOURS"), eq(currentSemester())))
                 .thenReturn(0L);
         when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(2L);
-        when(collectibleCatalogRepository.findUncollectedVariantByMemberUuidAndRarity("member-uuid", CollectibleRarity.COMMON, true))
+        when(collectibleCatalogRepository.existsUncollectedVariantByMemberUuidAndRarity("member-uuid", CollectibleRarity.COMMON, true))
+                .thenReturn(true);
+        when(collectibleCatalogRepository.findUncollectedVariantByMemberUuidAndRarity(eq("member-uuid"), eq(CollectibleRarity.COMMON), eq(true), any(Pageable.class)))
                 .thenReturn(List.of(collectible));
-        for (CollectibleRarity rarity : List.of(CollectibleRarity.RARE, CollectibleRarity.EPIC, CollectibleRarity.LEGENDARY)) {
-            when(collectibleCatalogRepository.findUncollectedVariantByMemberUuidAndRarity("member-uuid", rarity, true))
-                    .thenReturn(Collections.emptyList());
-        }
         when(collectionDrawRepository.save(any(CollectionDraw.class))).thenReturn(savedDraw);
         when(savedDraw.getId()).thenReturn(1L);
         when(savedDraw.getCollectible()).thenReturn(collectible);
@@ -438,8 +435,8 @@ class GamificationServiceTest {
         when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(2L);
         when(collectionDrawRepository.findAllByMemberUuidWithCollectible("member-uuid")).thenReturn(draws);
         for (CollectibleRarity rarity : CollectibleRarity.values()) {
-            when(collectibleCatalogRepository.findUncollectedVariantByMemberUuidAndRarity("member-uuid", rarity, true))
-                    .thenReturn(Collections.emptyList());
+            when(collectibleCatalogRepository.existsUncollectedVariantByMemberUuidAndRarity("member-uuid", rarity, true))
+                    .thenReturn(false);
         }
     }
 }

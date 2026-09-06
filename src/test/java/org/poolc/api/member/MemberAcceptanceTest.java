@@ -11,6 +11,8 @@ import org.poolc.api.AcceptanceTest;
 import org.poolc.api.auth.dto.AuthResponse;
 import org.poolc.api.member.domain.MemberRole;
 import org.poolc.api.member.dto.*;
+import org.poolc.api.poolc.PoolcAcceptanceTest;
+import org.poolc.api.poolc.dto.UpdatePoolcRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -78,17 +80,28 @@ public class MemberAcceptanceTest extends AcceptanceTest {
     @Order(5)
     @Test
     void unacceptedMemberCanGetOwnActivitySummary() {
-        ExtractableResponse<Response> response = RestAssured
-                .given().log().all()
-                .auth().oauth2(unacceptanceLogin())
-                .accept(MediaType.APPLICATION_JSON_VALUE)
-                .when().get("/member/me/activity-summary")
-                .then().log().all()
-                .extract();
+        String adminToken = adminLogin();
+        UpdatePoolcRequest openSubscription = new UpdatePoolcRequest(
+                "전영주", "01067679584", "공A 537호", null, "프로그래밍 동아리", null, true, null);
+        UpdatePoolcRequest closeSubscription = new UpdatePoolcRequest(
+                "전영주", "01067679584", "공A 537호", null, "프로그래밍 동아리", null, false, null);
 
-        MyActivitySummaryResponse summary = response.as(MyActivitySummaryResponse.class);
-        assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
-        assertThat(summary.getTotalHours()).isZero();
+        PoolcAcceptanceTest.updatePoolcInfo(adminToken, openSubscription);
+        try {
+            ExtractableResponse<Response> response = RestAssured
+                    .given().log().all()
+                    .auth().oauth2(unacceptanceLogin())
+                    .accept(MediaType.APPLICATION_JSON_VALUE)
+                    .when().get("/member/me/activity-summary")
+                    .then().log().all()
+                    .extract();
+
+            MyActivitySummaryResponse summary = response.as(MyActivitySummaryResponse.class);
+            assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
+            assertThat(summary.getTotalHours()).isZero();
+        } finally {
+            PoolcAcceptanceTest.updatePoolcInfo(adminToken, closeSubscription);
+        }
     }
 
     @Order(6)

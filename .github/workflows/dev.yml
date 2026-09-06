@@ -1,16 +1,14 @@
-name: Build staging backend image
+name: Backend CI and staging deploy
 
 on:
+  pull_request:
+    branches: [dev]
   push:
     branches: [dev]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  packages: write
-
 concurrency:
-  group: poolc-backend-staging
+  group: poolc-backend-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -18,28 +16,76 @@ env:
   IMAGE_NAME: poolc-web/poolc-be
 
 jobs:
-  test-and-build:
+  test:
+    name: Test backend
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: poolc_test
+          POSTGRES_USER: poolc
+          POSTGRES_PASSWORD: poolc_dev_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U poolc -d poolc_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '11'
           cache: gradle
+      - name: Run tests and package application
+        env:
+          DB_HOST: localhost:5432
+          TEST_DB_NAME: poolc_test
+          DB_USER_NAME: poolc
+          DB_PASSWORD: poolc_dev_password
+          PROJECT_NAME_HERE_SECRET_KEY: ci_test_secret_key
+          EXPIRE_LENGTH_IN_MILLISECONDS: "3600000"
+          FILE_DIR: ${{ runner.temp }}/poolc-files
+          EMAIL_ADDRESS: ci@example.com
+          EMAIL_PASSWORD: dummy
+          NAVER_BOOK_API_URL: https://openapi.naver.com/v1/search/book.json
+          NAVER_BOOK_CLIENT_ID: dummy
+          NAVER_BOOK_CLIENT_SECRET: dummy
+          KUBERNETES_API_KEY: local-ci
+        run: ./gradlew test bootJar --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: poolc-backend-jar
+          path: build/libs/app.jar
+          if-no-files-found: error
 
-      - name: Run tests
-        run: ./gradlew test
-
+  image:
+    name: Build and publish image
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: sha-${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: poolc-backend-jar
+          path: build/libs
       - uses: docker/setup-buildx-action@v3
-
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: docker/metadata-action@v5
         id: metadata
         with:
@@ -47,7 +93,6 @@ jobs:
           tags: |
             type=raw,value=dev
             type=sha,prefix=sha-
-
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -55,10 +100,18 @@ jobs:
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
 
+  deploy:
+    name: Update staging manifest
+    needs: image
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
       - name: Update PKS staging image
         env:
           GITOPS_TOKEN: ${{ secrets.POOLC_GITOPS_TOKEN }}
-          IMAGE_TAG: sha-${{ github.sha }}
+          IMAGE_TAG: ${{ needs.image.outputs.image_tag }}
         run: |
           set -euo pipefail
           test -n "$GITOPS_TOKEN"
@@ -69,8 +122,5 @@ jobs:
           git config user.name "PoolC staging CI"
           git config user.email "poolc-staging-ci@users.noreply.github.com"
           git add environments/poolc/staging/manifests/backend.yaml
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "chore(staging): deploy backend ${IMAGE_TAG}"
+          git diff --cached --quiet || git commit -m "chore(staging): deploy backend ${IMAGE_TAG}"
           git push
