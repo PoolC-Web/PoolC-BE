@@ -65,6 +65,13 @@ jobs:
         with:
           context: .
           push: false
+      - name: Inspect OIDC claims
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken('sts.amazonaws.com');
+            const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+            core.info(JSON.stringify({ aud: payload.aud, sub: payload.sub }));
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ steps.config.outputs.role_arn }}
