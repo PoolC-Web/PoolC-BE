@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.util.Locale;
 
 @Service
@@ -67,13 +68,13 @@ public class S3FileStorage implements FileStorage {
     }
 
     private StoredFile loadObject(String key) throws IOException {
-        try {
-            ResponseInputStream<GetObjectResponse> response = s3Client.getObject(GetObjectRequest.builder()
+        try (ResponseInputStream<GetObjectResponse> response = s3Client.getObject(GetObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
-                .build());
+                .build())) {
             GetObjectResponse metadata = response.response();
-            return new StoredFile(response, metadata.contentLength(), metadata.contentType());
+            byte[] content = response.readAllBytes();
+            return new StoredFile(new ByteArrayInputStream(content), content.length, metadata.contentType());
         } catch (S3Exception e) {
             throw new IOException("존재하지 않는 파일입니다", e);
         }
