@@ -38,6 +38,8 @@ security:
       expire-length: ${EXPIRE_LENGTH_IN_MILLISECONDS}
 file:
   storage: ${FILE_STORAGE:LOCAL}
+  image:
+    max-size-bytes: ${IMAGE_MAX_FILE_SIZE_BYTES:10000000}
   file-dir: ${FILE_DIR}
   s3:
     bucket: ${FILE_S3_BUCKET:}
