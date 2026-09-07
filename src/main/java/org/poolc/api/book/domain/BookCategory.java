@@ -1,9 +1,14 @@
 package org.poolc.api.book.domain;
 
 public enum BookCategory {
-    PROGRAMMING,
-    ALGORITHM,
-    SYSTEM,
-    DATA,
-    DESIGN
+    COMPUTER_LANGUAGE,
+    CERTIFICATION_CAREER,
+    ETC,
+    FRONTEND,
+    GAME,
+    APP,
+    LECTURE_TEXTBOOK,
+    AI,
+    DATA_ANALYSIS_SECURITY,
+    MATH_ELECTRONICS
 }
