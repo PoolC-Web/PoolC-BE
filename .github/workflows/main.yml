@@ -120,10 +120,12 @@ jobs:
           ECR_IMAGE: ${{ needs.image.outputs.image_uri }}
         run: |
           compose_base64="$(base64 < deploy/lightsail/docker-compose.production.yaml | tr -d '\n')"
+          env_renderer_base64="$(base64 < deploy/lightsail/render-env-from-ssm.sh | tr -d '\n')"
           ecr_registry="${ECR_IMAGE%%/*}"
           ecr_password_base64="$(aws ecr get-login-password --region "${{ steps.config.outputs.aws_region }}" | base64 -w 0)"
           command_lines="$(jq -cn \
             --arg compose "$compose_base64" \
+            --arg env_renderer "$env_renderer_base64" \
             --arg image "$ECR_IMAGE" \
             --arg registry "$ecr_registry" \
             --arg password "$ecr_password_base64" \
@@ -132,6 +134,9 @@ jobs:
               "install -d -m 700 /home/ubuntu/backend",
               "printf %s \($compose) | base64 -d > /home/ubuntu/backend/docker-compose.production.yaml",
               "chmod 600 /home/ubuntu/backend/docker-compose.production.yaml",
+              "printf %s \($env_renderer) | base64 -d > /home/ubuntu/backend/render-env-from-ssm.sh",
+              "chmod 700 /home/ubuntu/backend/render-env-from-ssm.sh",
+              "sudo -u ubuntu /home/ubuntu/backend/render-env-from-ssm.sh",
               "printf %s \($password) | base64 -d | docker login --username AWS --password-stdin \($registry)",
               "cd /home/ubuntu/backend",
               "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml pull palkia",
