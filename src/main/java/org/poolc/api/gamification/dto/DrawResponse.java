@@ -39,8 +39,8 @@ public class DrawResponse {
         this.drawId = draw.getId();
         this.collectibleId = draw.getCollectible().getId();
         this.name = draw.getCollectible().getNameKo();
-        this.spriteUrl = draw.getCollectible().getSpriteUrl();
-        this.shinySpriteUrl = draw.getCollectible().getShinySpriteUrl();
+        this.spriteUrl = draw.getCollectible().getDetailSpriteUrl() != null ? draw.getCollectible().getDetailSpriteUrl() : draw.getCollectible().getSpriteUrl();
+        this.shinySpriteUrl = draw.getCollectible().getShinyDetailSpriteUrl() != null ? draw.getCollectible().getShinyDetailSpriteUrl() : draw.getCollectible().getShinySpriteUrl();
         this.externalId = draw.getCollectible().getExternalId();
         this.category = draw.getCollectible().getCategoryKo();
         this.description = draw.getCollectible().getDescriptionKo();

@@ -14,6 +14,8 @@ public class CollectionItemResponse {
     private final CollectibleRarity rarity;
     private final String spriteUrl;
     private final String shinySpriteUrl;
+    private final String cardSpriteUrl;
+    private final String shinyCardSpriteUrl;
     private final String category;
     private final String description;
     private final Integer heightDecimeters;
@@ -35,8 +37,10 @@ public class CollectionItemResponse {
         this.generation = collectible.getGeneration();
         this.types = collectible.getTypes();
         this.rarity = collectible.getRarity();
-        this.spriteUrl = collectible.getSpriteUrl();
-        this.shinySpriteUrl = collectible.getShinySpriteUrl();
+        this.spriteUrl = collectible.getDetailSpriteUrl() != null ? collectible.getDetailSpriteUrl() : collectible.getSpriteUrl();
+        this.shinySpriteUrl = collectible.getShinyDetailSpriteUrl() != null ? collectible.getShinyDetailSpriteUrl() : collectible.getShinySpriteUrl();
+        this.cardSpriteUrl = collectible.getCardSpriteUrl() != null ? collectible.getCardSpriteUrl() : this.spriteUrl;
+        this.shinyCardSpriteUrl = collectible.getShinyCardSpriteUrl() != null ? collectible.getShinyCardSpriteUrl() : this.shinySpriteUrl;
         this.category = collectible.getCategoryKo();
         this.description = collectible.getDescriptionKo();
         this.heightDecimeters = collectible.getHeightDecimeters();
