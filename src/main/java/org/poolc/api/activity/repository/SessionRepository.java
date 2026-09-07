@@ -24,5 +24,10 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
             @Param("asOfDate") LocalDate asOfDate
     );
 
+    @Query("select distinct s from Session s join fetch s.activity a join fetch a.host "
+            + "left join fetch s.attendedMemberLoginIDs attendance "
+            + "where a.host.loginID = :loginId or attendance = :loginId")
+    List<Session> findAllRelevantToMember(@Param("loginId") String loginId);
+
 
 }

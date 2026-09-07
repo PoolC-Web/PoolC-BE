@@ -19,4 +19,7 @@ public interface AchievementProgressRepository extends JpaRepository<Achievement
     List<AchievementProgress> findAllByMemberUuidAndAchievementKey(
             @Param("memberUuid") String memberUuid,
             @Param("achievementKey") String achievementKey);
+
+    @Query("select p from AchievementProgress p where p.member.UUID = :memberUuid")
+    List<AchievementProgress> findAllByMemberUuid(@Param("memberUuid") String memberUuid);
 }
