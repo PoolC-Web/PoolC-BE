@@ -31,7 +31,11 @@ security:
       secret-key: ${PROJECT_NAME_HERE_SECRET_KEY}
       expire-length: ${EXPIRE_LENGTH_IN_MILLISECONDS}
 file:
+  storage: ${FILE_STORAGE:LOCAL}
   file-dir: ${FILE_DIR}
+  s3:
+    bucket: ${FILE_S3_BUCKET:}
+    region: ${AWS_REGION:ap-northeast-2}
 book:
   api:
     url: ${NAVER_BOOK_API_URL}
