@@ -85,10 +85,10 @@ public class MemberService {
 
     public List<MemberResponse> getAllMembersResponse(Member loginMember) {
         List<Member> members = getAllMembers();
-        return members.stream()
+        List<Member> visibleMembers = members.stream()
                 .filter(responseMember -> (!Optional.ofNullable(loginMember).isEmpty() && loginMember.isAdmin() || !responseMember.shouldHide()))
-                .map(memberResponseAssembler::of)
                 .collect(Collectors.toList());
+        return memberResponseAssembler.ofAll(visibleMembers);
     }
 
     public List<MemberResponse> getAllMembersResponseByName(String name) {
