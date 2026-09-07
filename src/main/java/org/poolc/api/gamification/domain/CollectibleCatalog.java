@@ -4,6 +4,7 @@ import lombok.Getter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -38,6 +39,18 @@ public class CollectibleCatalog {
 
     @Column(name = "shiny_sprite_url", length = 1024)
     private String shinySpriteUrl;
+
+    @Column(name = "card_sprite_url", length = 1024)
+    private String cardSpriteUrl;
+
+    @Column(name = "detail_sprite_url", length = 1024)
+    private String detailSpriteUrl;
+
+    @Column(name = "shiny_card_sprite_url", length = 1024)
+    private String shinyCardSpriteUrl;
+
+    @Column(name = "shiny_detail_sprite_url", length = 1024)
+    private String shinyDetailSpriteUrl;
 
     @Column(name = "category_ko", length = 120)
     private String categoryKo;
@@ -133,5 +146,27 @@ public class CollectibleCatalog {
         this.statSpecialDefense = statSpecialDefense;
         this.statSpeed = statSpeed;
         this.importedAt = LocalDateTime.now();
+    }
+
+    public boolean needsAssetSync(String sourceSpriteUrl, String sourceShinySpriteUrl) {
+        return cardSpriteUrl == null || detailSpriteUrl == null
+                || !Objects.equals(spriteUrl, sourceSpriteUrl)
+                || (sourceShinySpriteUrl != null && !sourceShinySpriteUrl.isBlank()
+                && (shinyCardSpriteUrl == null || shinyDetailSpriteUrl == null || !Objects.equals(shinySpriteUrl, sourceShinySpriteUrl)));
+    }
+
+    public void updateAssetUrls(String cardSpriteUrl, String detailSpriteUrl,
+                                String shinyCardSpriteUrl, String shinyDetailSpriteUrl) {
+        this.cardSpriteUrl = cardSpriteUrl;
+        this.detailSpriteUrl = detailSpriteUrl;
+        this.shinyCardSpriteUrl = shinyCardSpriteUrl;
+        this.shinyDetailSpriteUrl = shinyDetailSpriteUrl;
+    }
+
+    public void clearAssetUrls() {
+        this.cardSpriteUrl = null;
+        this.detailSpriteUrl = null;
+        this.shinyCardSpriteUrl = null;
+        this.shinyDetailSpriteUrl = null;
     }
 }

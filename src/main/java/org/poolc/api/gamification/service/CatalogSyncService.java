@@ -2,6 +2,7 @@ package org.poolc.api.gamification.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.poolc.api.common.exception.ConflictException;
 import org.poolc.api.gamification.domain.CatalogSyncRun;
 import org.poolc.api.gamification.domain.CollectibleCatalog;
@@ -25,10 +26,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class CatalogSyncService {
     private final CatalogSyncRunRepository syncRunRepository;
     private final CollectibleCatalogRepository catalogRepository;
+    private final PokemonAssetStorage pokemonAssetStorage;
     private final RestTemplate restTemplate = createRestTemplate();
     private final Map<String, String> abilityNamesKo = new HashMap<>();
 
@@ -117,10 +120,20 @@ public class CatalogSyncService {
                 .orElseGet(() -> new CollectibleCatalog(externalId, slug, nameKo, generation, types, rarity, importedSpriteUrl, importedShinySpriteUrl,
                         categoryKo, descriptionKo, heightDecimeters, weightHectograms, abilities,
                         stats.get("hp"), stats.get("attack"), stats.get("defense"), stats.get("special-attack"), stats.get("special-defense"), stats.get("speed")));
+        boolean needsAssetSync = collectible.needsAssetSync(importedSpriteUrl, importedShinySpriteUrl);
         if (collectible.getId() != null) {
             collectible.updateFromImport(slug, nameKo, generation, types, rarity, importedSpriteUrl, importedShinySpriteUrl,
                     categoryKo, descriptionKo, heightDecimeters, weightHectograms, abilities,
                     stats.get("hp"), stats.get("attack"), stats.get("defense"), stats.get("special-attack"), stats.get("special-defense"), stats.get("speed"));
+        }
+        if (needsAssetSync && importedSpriteUrl != null && !importedSpriteUrl.isBlank()) {
+            try {
+                PokemonAssetStorage.PokemonAssetUrls assetUrls = pokemonAssetStorage.synchronize(externalId, importedSpriteUrl, importedShinySpriteUrl);
+                collectible.updateAssetUrls(assetUrls.getCardUrl(), assetUrls.getDetailUrl(), assetUrls.getShinyCardUrl(), assetUrls.getShinyDetailUrl());
+            } catch (RuntimeException exception) {
+                collectible.clearAssetUrls();
+                log.warn("포켓몬 이미지 동기화 실패: externalId={}", externalId, exception);
+            }
         }
         catalogRepository.save(collectible);
     }

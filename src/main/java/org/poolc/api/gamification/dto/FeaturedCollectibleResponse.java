@@ -19,8 +19,8 @@ public class FeaturedCollectibleResponse {
         this.collectibleId = collectible.getId();
         this.externalId = collectible.getExternalId();
         this.name = collectible.getNameKo();
-        this.spriteUrl = collectible.getSpriteUrl();
-        this.shinySpriteUrl = collectible.getShinySpriteUrl();
+        this.spriteUrl = collectible.getDetailSpriteUrl() != null ? collectible.getDetailSpriteUrl() : collectible.getSpriteUrl();
+        this.shinySpriteUrl = collectible.getShinyDetailSpriteUrl() != null ? collectible.getShinyDetailSpriteUrl() : collectible.getShinySpriteUrl();
         this.shiny = featured.isShiny();
         this.useAsProfile = featured.isUseAsProfile();
     }
