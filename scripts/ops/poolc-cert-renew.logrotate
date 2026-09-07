@@ -1,0 +1,8 @@
+/home/ubuntu/logs/poolc-cert-renew.log {
+    weekly
+    rotate 12
+    compress
+    missingok
+    notifempty
+    create 0640 ubuntu ubuntu
+}

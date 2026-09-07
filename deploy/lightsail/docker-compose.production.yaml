@@ -4,12 +4,17 @@ services:
     container_name: palkia
     env_file:
       - .env.production
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     volumes:
       - /home/ubuntu/file:/file
       - /home/ubuntu/.aws:/root/.aws:ro
     restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: "5"
 
   nginx:
     image: nginx:1.27-alpine
@@ -24,3 +29,8 @@ services:
     restart: unless-stopped
     depends_on:
       - palkia
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: "5"
