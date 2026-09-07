@@ -155,7 +155,7 @@ jobs:
               "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml run --rm --no-deps nginx nginx -t",
               "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml pull palkia",
               "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml up -d --no-deps palkia nginx",
-              "docker compose -f docker-compose.production.yaml ps"
+              "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml ps"
             ]')"
           command_id="$(aws ssm send-command \
             --document-name AWS-RunShellScript \
