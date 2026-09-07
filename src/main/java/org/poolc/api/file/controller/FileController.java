@@ -12,7 +12,6 @@ import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -98,21 +97,16 @@ public class FileController {
     }
 
     private ResponseEntity<?> sendFile(String fileId, String downloadFileName, ImageVariant variant) {
-        try {
-            StoredFile storedFile = loadFile(fileId, variant);
+        try (StoredFile storedFile = loadFile(fileId, variant)) {
             MediaType contentType = resolveContentType(storedFile.getContentType(), downloadFileName);
-            StreamingResponseBody body = outputStream -> {
-                try (StoredFile file = storedFile) {
-                    file.getInputStream().transferTo(outputStream);
-                }
-            };
+            byte[] content = storedFile.getInputStream().readAllBytes();
 
             return ResponseEntity.ok()
                     .contentType(contentType)
-                    .contentLength(storedFile.getContentLength())
+                    .contentLength(content.length)
                     .header("Cache-Control", "public, max-age=31536000, immutable")
                     .header("Content-Disposition", ContentDisposition.inline().filename(downloadFileName, StandardCharsets.UTF_8).build().toString())
-                    .body(body);
+                    .body(content);
         } catch (IOException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
