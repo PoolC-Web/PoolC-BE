@@ -10,6 +10,7 @@ readonly OUTPUT_FILE="${OUTPUT_FILE:-/home/ubuntu/backend/.env.production}"
 
 required_keys=(
   AWS_REGION
+  CLUB_WIFI_ALLOWED_IPS
   DB_HOST
   DB_NAME
   DB_PASSWORD

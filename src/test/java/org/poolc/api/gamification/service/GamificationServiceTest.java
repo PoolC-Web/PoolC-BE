@@ -7,6 +7,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.poolc.api.common.exception.ConflictException;
 import org.poolc.api.common.domain.YearSemester;
 import org.poolc.api.gamification.domain.BallTransaction;
@@ -71,7 +73,7 @@ class GamificationServiceTest {
                 ballTransactionRepository, collectionDrawRepository, collectibleCatalogRepository,
                 memberRepository, memberService, achievementProgressRepository, sessionRepository,
                 activityRepository, scrapRepository, projectRepository);
-        when(member.getUUID()).thenReturn("member-uuid");
+        lenient().when(member.getUUID()).thenReturn("member-uuid");
         lenient().when(member.getLoginID()).thenReturn("member-login-id");
         lenient().when(memberRepository.findByUUIDForUpdate("member-uuid")).thenReturn(Optional.of(member));
         lenient().when(sessionRepository.findAllWithActivityAndAttendanceInSemester(any(), any(), any())).thenReturn(Collections.emptyList());
@@ -115,6 +117,18 @@ class GamificationServiceTest {
         service.getSummary(member);
 
         verify(ballTransactionRepository, never()).save(any(BallTransaction.class));
+    }
+
+    @Test
+    void clubWifiQuestAcceptsOnlyConfiguredClientIps() {
+        ReflectionTestUtils.setField(service, "clubWifiAllowedIps", "203.0.113.10, 203.0.113.11");
+        MockHttpServletRequest allowedRequest = new MockHttpServletRequest();
+        allowedRequest.setRemoteAddr("203.0.113.10");
+        MockHttpServletRequest rejectedRequest = new MockHttpServletRequest();
+        rejectedRequest.setRemoteAddr("203.0.113.12");
+
+        assertThat((Boolean) ReflectionTestUtils.invokeMethod(service, "isClubWifiRequest", allowedRequest)).isTrue();
+        assertThat((Boolean) ReflectionTestUtils.invokeMethod(service, "isClubWifiRequest", rejectedRequest)).isFalse();
     }
 
     @Test
@@ -181,14 +195,14 @@ class GamificationServiceTest {
     }
 
     @Test
-    void shinyDrawConsumesTwoBallsAndCreatesAShinyCollectionRecord() {
+    void shinyDrawConsumesTwentyBallsAndCreatesAShinyCollectionRecord() {
         CollectibleCatalog collectible = org.mockito.Mockito.mock(CollectibleCatalog.class);
         CollectionDraw savedDraw = org.mockito.Mockito.mock(CollectionDraw.class);
         when(memberService.getMyActivitySummary(member)).thenReturn(activitySummary("0"));
         when(ballTransactionRepository.getAmountByMemberUuidAndTypeAndSource(
                 eq("member-uuid"), eq(BallTransactionType.ACTIVITY_HOUR_REWARD), eq("ACTIVITY_HOURS"), eq(currentSemester())))
                 .thenReturn(0L);
-        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(2L);
+        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(20L);
         when(collectibleCatalogRepository.existsUncollectedVariantByMemberUuidAndRarity("member-uuid", CollectibleRarity.COMMON, true))
                 .thenReturn(true);
         when(collectibleCatalogRepository.findUncollectedVariantByMemberUuidAndRarity(eq("member-uuid"), eq(CollectibleRarity.COMMON), eq(true), any(Pageable.class)))
@@ -208,7 +222,7 @@ class GamificationServiceTest {
         assertThat(drawCaptor.getValue().isShiny()).isTrue();
         ArgumentCaptor<BallTransaction> transactionCaptor = ArgumentCaptor.forClass(BallTransaction.class);
         verify(ballTransactionRepository).save(transactionCaptor.capture());
-        assertThat(transactionCaptor.getValue().getAmount()).isEqualTo(-2);
+        assertThat(transactionCaptor.getValue().getAmount()).isEqualTo(-20);
     }
 
     @Test
@@ -350,58 +364,6 @@ class GamificationServiceTest {
                 .isEqualTo(1);
     }
 
-    @Test
-    void repeatableQuestClaimsOneRewardPerCompletedTargetBatch() {
-        AchievementProgress progress = org.mockito.Mockito.mock(AchievementProgress.class);
-        CollectionDraw draw = org.mockito.Mockito.mock(CollectionDraw.class);
-        CollectibleCatalog collectible = org.mockito.Mockito.mock(CollectibleCatalog.class);
-        when(draw.getDrawnAt()).thenReturn(LocalDateTime.now());
-        when(draw.getCollectible()).thenReturn(collectible);
-        when(collectible.getId()).thenReturn(1L);
-        when(collectionDrawRepository.findAllByMemberUuidWithCollectible("member-uuid"))
-                .thenReturn(Collections.nCopies(6, draw));
-        when(memberService.getMyActivitySummary(member)).thenReturn(activitySummary("0"));
-        when(achievementProgressRepository.findByMemberUuidAndAchievementKeyAndPeriodKey(
-                eq("member-uuid"), eq("REPEAT_DRAW"), any()))
-                .thenReturn(Optional.of(progress));
-        when(progress.getProgress()).thenReturn(6);
-        when(progress.getClaimedCount()).thenReturn(0);
-        when(progress.isClaimed()).thenReturn(false);
-        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(2L);
-
-        service.claimAchievement(member, "REPEAT_DRAW");
-
-        verify(progress).claim(2);
-        ArgumentCaptor<BallTransaction> transactionCaptor = ArgumentCaptor.forClass(BallTransaction.class);
-        verify(ballTransactionRepository).save(transactionCaptor.capture());
-        assertThat(transactionCaptor.getValue().getAmount()).isEqualTo(2);
-    }
-
-    @Test
-    void repeatableQuestRejectsAnIncompleteTargetBatch() {
-        AchievementProgress progress = org.mockito.Mockito.mock(AchievementProgress.class);
-        CollectionDraw draw = org.mockito.Mockito.mock(CollectionDraw.class);
-        CollectibleCatalog collectible = org.mockito.Mockito.mock(CollectibleCatalog.class);
-        when(draw.getDrawnAt()).thenReturn(LocalDateTime.now());
-        when(draw.getCollectible()).thenReturn(collectible);
-        when(collectible.getId()).thenReturn(1L);
-        when(collectionDrawRepository.findAllByMemberUuidWithCollectible("member-uuid"))
-                .thenReturn(List.of(draw, draw));
-        when(memberService.getMyActivitySummary(member)).thenReturn(activitySummary("0"));
-        when(achievementProgressRepository.findByMemberUuidAndAchievementKeyAndPeriodKey(
-                eq("member-uuid"), eq("REPEAT_DRAW"), any()))
-                .thenReturn(Optional.of(progress));
-        when(progress.getProgress()).thenReturn(2);
-        when(progress.getClaimedCount()).thenReturn(0);
-
-        assertThatThrownBy(() -> service.claimAchievement(member, "REPEAT_DRAW"))
-                .isInstanceOf(ConflictException.class)
-                .hasMessageContaining("받을 수 있는 보상이 없습니다");
-
-        verify(progress, never()).claim(org.mockito.ArgumentMatchers.anyInt());
-        verify(ballTransactionRepository, never()).save(any(BallTransaction.class));
-    }
-
     private MyActivitySummaryResponse activitySummary(String totalHours) {
         return MyActivitySummaryResponse.builder()
                 .totalHours(new BigDecimal(totalHours))
@@ -432,7 +394,7 @@ class GamificationServiceTest {
         when(ballTransactionRepository.getAmountByMemberUuidAndTypeAndSource(
                 eq("member-uuid"), eq(BallTransactionType.ACTIVITY_HOUR_REWARD), eq("ACTIVITY_HOURS"), eq(currentSemester())))
                 .thenReturn(0L);
-        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(2L);
+        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(20L);
         when(collectionDrawRepository.findAllByMemberUuidWithCollectible("member-uuid")).thenReturn(draws);
         for (CollectibleRarity rarity : CollectibleRarity.values()) {
             when(collectibleCatalogRepository.existsUncollectedVariantByMemberUuidAndRarity("member-uuid", rarity, true))

@@ -362,7 +362,7 @@ public class GamificationService {
         Member member = memberRepository.findByUUIDForUpdate(authenticatedMember.getUUID())
                 .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다."));
         synchronizeActivityHourReward(member);
-        int drawCost = shiny ? 2 : 1;
+        int drawCost = shiny ? 20 : 1;
         BallType ballType = BallType.NORMAL;
         long ballCount = ballTransactionRepository.getBalanceByMemberUuid(member.getUUID());
         if (ballCount < drawCost) {
