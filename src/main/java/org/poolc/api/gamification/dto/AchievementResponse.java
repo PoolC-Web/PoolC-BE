@@ -19,19 +19,26 @@ public class AchievementResponse {
 
     public AchievementResponse(String key, String type, String title, String description,
                                int target, AchievementProgress progress, String rewardBallType, int rewardAmount) {
+        this(key, type, title, description, target, progress.getProgress(), rewardBallType, rewardAmount,
+                progress.isClaimed(), progress.getClaimedCount());
+    }
+
+    public AchievementResponse(String key, String type, String title, String description,
+                               int target, int progress, String rewardBallType, int rewardAmount,
+                               boolean claimed, int claimedCount) {
         this.key = key;
         this.type = type;
         this.title = title;
         this.description = description;
         this.target = target;
-        this.progress = progress.getProgress();
+        this.progress = progress;
         this.rewardBallType = rewardBallType;
         this.rewardAmount = rewardAmount;
-        this.claimed = progress.isClaimed();
-        this.claimedCount = progress.getClaimedCount();
+        this.claimed = claimed;
+        this.claimedCount = claimedCount;
         int completedRewardCount = "REPEATABLE".equals(type)
-                ? progress.getProgress() / target
-                : progress.getProgress() >= target ? 1 : 0;
-        this.claimableCount = Math.max(0, completedRewardCount - progress.getClaimedCount());
+                ? progress / target
+                : progress >= target ? 1 : 0;
+        this.claimableCount = Math.max(0, completedRewardCount - claimedCount);
     }
 }

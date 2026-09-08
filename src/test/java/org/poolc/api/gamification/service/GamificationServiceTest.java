@@ -75,15 +75,18 @@ class GamificationServiceTest {
                 activityRepository, scrapRepository, projectRepository);
         lenient().when(member.getUUID()).thenReturn("member-uuid");
         lenient().when(member.getLoginID()).thenReturn("member-login-id");
+        lenient().when(memberRepository.findByUUID("member-uuid")).thenReturn(Optional.of(member));
         lenient().when(memberRepository.findByUUIDForUpdate("member-uuid")).thenReturn(Optional.of(member));
         lenient().when(sessionRepository.findAllWithActivityAndAttendanceInSemester(any(), any(), any())).thenReturn(Collections.emptyList());
         lenient().when(sessionRepository.findAll()).thenReturn(Collections.emptyList());
+        lenient().when(sessionRepository.findAllRelevantToMember("member-login-id")).thenReturn(Collections.emptyList());
         lenient().when(activityRepository.findActivitiesByActivityMembers("member-login-id")).thenReturn(Collections.emptyList());
         lenient().when(activityRepository.findActivitiesByHost(member)).thenReturn(Collections.emptyList());
         lenient().when(scrapRepository.countByMemberIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(eq("member-login-id"), any(), any())).thenReturn(0L);
         lenient().when(projectRepository.findProjectsByProjectMembers("member-login-id")).thenReturn(Collections.emptyList());
         lenient().when(achievementProgressRepository.findAllByMemberUuidAndAchievementKey("member-uuid", "DAILY_ATTENDANCE"))
                 .thenReturn(Collections.emptyList());
+        lenient().when(achievementProgressRepository.findAllByMemberUuid("member-uuid")).thenReturn(Collections.emptyList());
     }
 
     @Test

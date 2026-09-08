@@ -112,20 +112,26 @@ public class GamificationService {
 
     @Transactional
     public List<AchievementResponse> getAchievements(Member authenticatedMember, HttpServletRequest request) {
-        Member member = memberRepository.findByUUIDForUpdate(authenticatedMember.getUUID())
+        Member member = memberRepository.findByUUID(authenticatedMember.getUUID())
                 .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다."));
         LocalDate today = LocalDate.now();
+        ensureDailyAttendance(member, today);
         Map<String, Integer> progress = calculateAchievementProgress(member, today, request);
+        Map<String, AchievementProgress> savedProgressByKey = achievementProgressRepository.findAllByMemberUuid(member.getUUID())
+                .stream()
+                .collect(Collectors.toMap(saved -> saved.getAchievementKey() + "|" + saved.getPeriodKey(), saved -> saved));
         return ACHIEVEMENTS.stream().map(definition -> {
             String periodKey = periodKey(definition.type, today);
-            AchievementProgress saved = achievementProgressRepository
-                    .findByMemberUuidAndAchievementKeyAndPeriodKey(member.getUUID(), definition.key, periodKey)
-                    .orElseGet(() -> achievementProgressRepository.save(new AchievementProgress(
-                            member, definition.key, periodKey, progress.get(definition.key))));
-            saved.updateProgress(progress.get(definition.key));
+            AchievementProgress saved = savedProgressByKey.get(definition.key + "|" + periodKey);
             return new AchievementResponse(definition.key, definition.type, definition.title, definition.description,
-                    definition.target, saved, definition.rewardBallType.name(), definition.rewardAmount);
+                    definition.target, progress.get(definition.key), definition.rewardBallType.name(), definition.rewardAmount,
+                    saved != null && saved.isClaimed(), saved == null ? 0 : saved.getClaimedCount());
         }).collect(Collectors.toList());
+    }
+
+    private void ensureDailyAttendance(Member member, LocalDate today) {
+        achievementProgressRepository.findByMemberUuidAndAchievementKeyAndPeriodKey(member.getUUID(), "DAILY_ATTENDANCE", today.toString())
+                .orElseGet(() -> achievementProgressRepository.save(new AchievementProgress(member, "DAILY_ATTENDANCE", today.toString(), 1)));
     }
 
     @Transactional
@@ -192,7 +198,8 @@ public class GamificationService {
         LocalDateTime seasonStart = currentSemester.getFirstDateFromYearSemester().atStartOfDay();
         LocalDateTime seasonEnd = currentSemester.getLastDateFromYearSemester().plusDays(1).atStartOfDay();
         int seasonScraps = Math.toIntExact(scrapRepository.countByMemberIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(member.getLoginID(), seasonStart, seasonEnd));
-        int seasonParticipation = activityRepository.findActivitiesByActivityMembers(member.getLoginID()).stream()
+        List<org.poolc.api.activity.domain.Activity> participatedActivities = activityRepository.findActivitiesByActivityMembers(member.getLoginID());
+        int seasonParticipation = participatedActivities.stream()
                 .filter(activity -> activity.getStartDate() != null
                         && !activity.getStartDate().isBefore(currentSemester.getFirstDateFromYearSemester())
                         && !activity.getStartDate().isAfter(currentSemester.getLastDateFromYearSemester()))
@@ -205,12 +212,14 @@ public class GamificationService {
                 .count();
         int seasonHours = memberService.getMyActivitySummary(member).getTotalHours()
                 .setScale(0, RoundingMode.FLOOR).intValue();
-        int allAttendance = (int) sessionRepository.findAll().stream()
+        List<Session> relevantSessions = sessionRepository.findAllRelevantToMember(member.getLoginID());
+        int allAttendance = (int) relevantSessions.stream()
                 .filter(session -> session.getAttendedMemberLoginIDs().contains(member.getLoginID()))
                 .count();
-        int allActivityParticipation = activityRepository.findActivitiesByActivityMembers(member.getLoginID()).size();
-        int allProjects = projectRepository.findProjectsByProjectMembers(member.getLoginID()).size();
-        int allHours = totalRecognizedHours(member);
+        int allActivityParticipation = participatedActivities.size();
+        List<org.poolc.api.project.domain.Project> projects = projectRepository.findProjectsByProjectMembers(member.getLoginID());
+        int allProjects = projects.size();
+        int allHours = totalRecognizedHours(member, relevantSessions, allProjects);
         int firstProfile = hasCompleteProfile(member) ? 1 : 0;
         int firstCollection = draws.isEmpty() ? 0 : 1;
         int firstShiny = draws.stream().anyMatch(CollectionDraw::isShiny) ? 1 : 0;
@@ -271,9 +280,9 @@ public class GamificationService {
                 .allMatch(value -> value != null && !value.isBlank());
     }
 
-    private int totalRecognizedHours(Member member) {
+    private int totalRecognizedHours(Member member, List<Session> relevantSessions, int projectCount) {
         java.math.BigDecimal hours = java.math.BigDecimal.ZERO;
-        for (Session session : sessionRepository.findAll()) {
+        for (Session session : relevantSessions) {
             String loginId = member.getLoginID();
             boolean hosted = session.getActivity().getHost().getLoginID().equals(loginId);
             boolean attended = session.getAttendedMemberLoginIDs().contains(loginId);
@@ -283,8 +292,7 @@ public class GamificationService {
                 hours = hours.add(java.math.BigDecimal.valueOf(session.getHour()));
             }
         }
-        hours = hours.add(java.math.BigDecimal.TEN.multiply(java.math.BigDecimal.valueOf(
-                projectRepository.findProjectsByProjectMembers(member.getLoginID()).size())));
+        hours = hours.add(java.math.BigDecimal.TEN.multiply(java.math.BigDecimal.valueOf(projectCount)));
         return hours.setScale(0, RoundingMode.FLOOR).intValue();
     }
 

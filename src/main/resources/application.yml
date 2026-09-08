@@ -56,5 +56,9 @@ kubernetes:
 gamification:
   pokeapi:
     base-url: ${POKEAPI_BASE_URL:https://pokeapi.co/api/v2}
+  pokemon-assets:
+    bucket: ${POKEMON_ASSETS_S3_BUCKET:poolc-pokemon-assets-s3}
+    public-base-url: ${POKEMON_ASSETS_PUBLIC_BASE_URL:https://poolc-pokemon-assets-s3.s3.ap-northeast-2.amazonaws.com}
+    region: ${AWS_REGION:ap-northeast-2}
   club-wifi:
     allowed-ips: ${CLUB_WIFI_ALLOWED_IPS:127.0.0.1}
