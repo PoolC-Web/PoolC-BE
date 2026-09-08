@@ -22,10 +22,6 @@
 | :---: | :---: | :---: |
 | 인증 · 권한 · 회원 | 세미나 · 게시판 · 도서 · 프로젝트 | 포켓몬 도감 · 퀘스트 · 포켓볼 |
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/PoolC/.github/main/profile/assets/poolc-web-architecture.png" width="900" alt="PoolC Web Architecture" />
-</div>
-
 ## Architecture
 
 ```text
@@ -117,12 +113,10 @@ master push
 | [Mayne0213](https://github.com/Mayne0213) | [jinhodotchoi](https://github.com/jinhodotchoi) | [mingd1023](https://github.com/mingd1023) | [jimmy0006](https://github.com/jimmy0006) | [hcpak](https://github.com/hcpak) |
 | :---: | :---: | :---: | :---: | :---: |
 | <img src="https://github.com/Mayne0213.png?size=160" width="88" alt="Mayne0213" /> | <img src="https://github.com/jinhodotchoi.png?size=160" width="88" alt="jinhodotchoi" /> | <img src="https://github.com/mingd1023.png?size=160" width="88" alt="mingd1023" /> | <img src="https://github.com/jimmy0006.png?size=160" width="88" alt="jimmy0006" /> | <img src="https://github.com/hcpak.png?size=160" width="88" alt="hcpak" /> |
-| BE · Infra | BE | BE | BE · Infra | BE |
 
 | [becooq81](https://github.com/becooq81) | [yoonseokch](https://github.com/yoonseokch) | [Jjungs7](https://github.com/Jjungs7) |
 | :---: | :---: | :---: |
 | <img src="https://github.com/becooq81.png?size=160" width="88" alt="becooq81" /> | <img src="https://github.com/yoonseokch.png?size=160" width="88" alt="yoonseokch" /> | <img src="https://github.com/Jjungs7.png?size=160" width="88" alt="Jjungs7" /> |
-| BE | BE | BE |
 
 </div>
 
