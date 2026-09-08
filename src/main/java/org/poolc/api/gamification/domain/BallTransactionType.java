@@ -6,5 +6,6 @@ public enum BallTransactionType {
     BALL_PURCHASE,
     ATTENDANCE_REWARD,
     ATTENDANCE_REVERSAL,
+    EXCHANGE,
     DRAW
 }

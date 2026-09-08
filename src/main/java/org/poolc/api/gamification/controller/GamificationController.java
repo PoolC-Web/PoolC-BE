@@ -82,6 +82,16 @@ public class GamificationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(gamificationService.draw(member, request.isShiny()));
     }
 
+    @PostMapping("/me/draws/ten")
+    public ResponseEntity<List<DrawResponse>> drawTen(@AuthenticationPrincipal Member member) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(gamificationService.drawTen(member));
+    }
+
+    @PostMapping("/me/master-balls/exchange")
+    public ResponseEntity<BallBalancesResponse> exchangeMasterBall(@AuthenticationPrincipal Member member) {
+        return ResponseEntity.ok(gamificationService.exchangeMasterBall(member));
+    }
+
     @GetMapping("/me/achievements")
     public ResponseEntity<List<AchievementResponse>> getAchievements(@AuthenticationPrincipal Member member, HttpServletRequest request) {
         return ResponseEntity.ok(gamificationService.getAchievements(member, request));
