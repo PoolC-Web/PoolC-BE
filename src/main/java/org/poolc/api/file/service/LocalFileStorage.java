@@ -37,15 +37,35 @@ public class LocalFileStorage implements FileStorage {
     }
 
     @Override
-    public byte[] read(String fileId) throws IOException {
+    public StoredFile load(String fileId) throws IOException {
         Path path = objectsDirectory().resolve(fileId);
         if (!Files.isRegularFile(path)) {
             throw new IOException("존재하지 않는 파일입니다");
         }
-        return Files.readAllBytes(path);
+        return new StoredFile(Files.newInputStream(path), Files.size(path), Files.probeContentType(path));
+    }
+
+    @Override
+    public void storePreview(String fileId, ImageVariant variant, InputStream inputStream, long contentLength, String contentType) throws IOException {
+        Path previewPath = previewPath(fileId, variant);
+        Files.createDirectories(previewPath.getParent());
+        Files.copy(inputStream, previewPath);
+    }
+
+    @Override
+    public StoredFile loadPreview(String fileId, ImageVariant variant) throws IOException {
+        Path path = previewPath(fileId, variant);
+        if (!Files.isRegularFile(path)) {
+            throw new IOException("존재하지 않는 미리보기 파일입니다");
+        }
+        return new StoredFile(Files.newInputStream(path), Files.size(path), Files.probeContentType(path));
     }
 
     private Path objectsDirectory() {
         return storageRoot.resolve(OBJECTS_DIRECTORY);
+    }
+
+    private Path previewPath(String fileId, ImageVariant variant) {
+        return storageRoot.resolve(PREVIEWS_DIRECTORY).resolve(fileId).resolve(variant.name().toLowerCase() + ".webp");
     }
 }

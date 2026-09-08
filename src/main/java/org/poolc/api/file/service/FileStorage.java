@@ -6,5 +6,9 @@ import java.io.InputStream;
 public interface FileStorage {
     void store(String fileId, InputStream inputStream, long contentLength, String contentType) throws IOException;
 
-    byte[] read(String fileId) throws IOException;
+    StoredFile load(String fileId) throws IOException;
+
+    void storePreview(String fileId, ImageVariant variant, InputStream inputStream, long contentLength, String contentType) throws IOException;
+
+    StoredFile loadPreview(String fileId, ImageVariant variant) throws IOException;
 }
