@@ -2,10 +2,8 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/PoolC/.github/main/profile/assets/poolc.dark.svg" />
-  <img src="https://raw.githubusercontent.com/PoolC/.github/main/profile/assets/poolc.vertical.svg" width="360" alt="PoolC" />
+  <img src="https://raw.githubusercontent.com/PoolC/.github/main/profile/assets/poolc.vertical.svg" width="100%" alt="PoolC" />
 </picture>
-
-# PoolC Backend
 
 연세대학교 공과대학 프로그래밍 학술동아리 **PoolC** 홈페이지 API
 
@@ -112,30 +110,19 @@ master push
   → Lightsail deploy
 ```
 
-## Maintainer
+## Contributors
 
 <div align="center">
 
-| [Mayne0213](https://github.com/Mayne0213) |
-| :---: |
-| <img src="https://github.com/Mayne0213.png?size=180" width="120" alt="Mayne0213" /> |
-| FE · BE · Infra · Handoff |
-
-</div>
-
-## Contributors & Alumni
-
-<div align="center">
-
-| [jinhodotchoi](https://github.com/jinhodotchoi) | [mingd1023](https://github.com/mingd1023) | [Hys-Lee](https://github.com/Hys-Lee) | [jimmy0006](https://github.com/jimmy0006) | [hcpak](https://github.com/hcpak) |
+| [Mayne0213](https://github.com/Mayne0213) | [jinhodotchoi](https://github.com/jinhodotchoi) | [mingd1023](https://github.com/mingd1023) | [jimmy0006](https://github.com/jimmy0006) | [hcpak](https://github.com/hcpak) |
 | :---: | :---: | :---: | :---: | :---: |
-| <img src="https://github.com/jinhodotchoi.png?size=160" width="88" alt="jinhodotchoi" /> | <img src="https://github.com/mingd1023.png?size=160" width="88" alt="mingd1023" /> | <img src="https://github.com/Hys-Lee.png?size=160" width="88" alt="Hys-Lee" /> | <img src="https://github.com/jimmy0006.png?size=160" width="88" alt="jimmy0006" /> | <img src="https://github.com/hcpak.png?size=160" width="88" alt="hcpak" /> |
-| FE · BE | FE · BE | FE | FE · BE · Infra | BE |
+| <img src="https://github.com/Mayne0213.png?size=160" width="88" alt="Mayne0213" /> | <img src="https://github.com/jinhodotchoi.png?size=160" width="88" alt="jinhodotchoi" /> | <img src="https://github.com/mingd1023.png?size=160" width="88" alt="mingd1023" /> | <img src="https://github.com/jimmy0006.png?size=160" width="88" alt="jimmy0006" /> | <img src="https://github.com/hcpak.png?size=160" width="88" alt="hcpak" /> |
+| BE · Infra | BE | BE | BE · Infra | BE |
 
-| [becooq81](https://github.com/becooq81) | [yoonseokch](https://github.com/yoonseokch) | [Jjungs7](https://github.com/Jjungs7) | [J3m3](https://github.com/J3m3) |
-| :---: | :---: | :---: | :---: |
-| <img src="https://github.com/becooq81.png?size=160" width="88" alt="becooq81" /> | <img src="https://github.com/yoonseokch.png?size=160" width="88" alt="yoonseokch" /> | <img src="https://github.com/Jjungs7.png?size=160" width="88" alt="Jjungs7" /> | <img src="https://github.com/J3m3.png?size=160" width="88" alt="J3m3" /> |
-| BE | BE | BE | Infra |
+| [becooq81](https://github.com/becooq81) | [yoonseokch](https://github.com/yoonseokch) | [Jjungs7](https://github.com/Jjungs7) |
+| :---: | :---: | :---: |
+| <img src="https://github.com/becooq81.png?size=160" width="88" alt="becooq81" /> | <img src="https://github.com/yoonseokch.png?size=160" width="88" alt="yoonseokch" /> | <img src="https://github.com/Jjungs7.png?size=160" width="88" alt="Jjungs7" /> |
+| BE | BE | BE |
 
 </div>
 
