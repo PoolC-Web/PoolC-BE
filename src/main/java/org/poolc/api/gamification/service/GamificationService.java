@@ -370,15 +370,33 @@ public class GamificationService {
         Member member = memberRepository.findByUUIDForUpdate(authenticatedMember.getUUID())
                 .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다."));
         synchronizeActivityHourReward(member);
-        int drawCost = shiny ? 20 : 1;
-        BallType ballType = BallType.NORMAL;
-        long ballCount = ballTransactionRepository.getBalanceByMemberUuid(member.getUUID());
+        return drawForMember(member, shiny);
+    }
+
+    @Transactional
+    public BallBalancesResponse exchangeMasterBall(Member authenticatedMember) {
+        Member member = memberRepository.findByUUIDForUpdate(authenticatedMember.getUUID())
+                .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다."));
+        synchronizeActivityHourReward(member);
+        if (ballTransactionRepository.getBalanceByMemberUuidAndBallType(member.getUUID(), BallType.NORMAL) < 20) {
+            throw new ConflictException("마스터볼 교환에는 포켓볼 20개가 필요합니다.");
+        }
+        String exchangeId = "MASTER_BALL_" + java.util.UUID.randomUUID();
+        ballTransactionRepository.save(new BallTransaction(member, -20, BallTransactionType.EXCHANGE, BallType.NORMAL, "MASTER_BALL_EXCHANGE", exchangeId));
+        ballTransactionRepository.save(new BallTransaction(member, 1, BallTransactionType.EXCHANGE, BallType.MASTER, "MASTER_BALL_EXCHANGE", exchangeId));
+        return getBallBalances(member);
+    }
+
+    private DrawResponse drawForMember(Member member, boolean shiny) {
+        int drawCost = 1;
+        BallType ballType = shiny ? BallType.MASTER : BallType.NORMAL;
+        long ballCount = ballTransactionRepository.getBalanceByMemberUuidAndBallType(member.getUUID(), ballType);
         if (ballCount < drawCost) {
-            throw new ConflictException("사용할 포켓볼이 부족합니다.");
+            throw new ConflictException(shiny ? "이로치 뽑기에는 마스터볼 1개가 필요합니다." : "사용할 포켓볼이 부족합니다.");
         }
 
         EnumSet<CollectibleRarity> availableCandidateRarities = EnumSet.noneOf(CollectibleRarity.class);
-        for (CollectibleRarity rarity : availableRarities(BallType.NORMAL)) {
+        for (CollectibleRarity rarity : availableRarities(ballType)) {
             if (collectibleCatalogRepository.existsUncollectedVariantByMemberUuidAndRarity(member.getUUID(), rarity, shiny)) {
                 availableCandidateRarities.add(rarity);
             }
@@ -462,6 +480,7 @@ public class GamificationService {
     private EnumSet<CollectibleRarity> availableRarities(BallType ballType) {
         switch (ballType) {
             case NORMAL: return EnumSet.allOf(CollectibleRarity.class);
+            case MASTER: return EnumSet.allOf(CollectibleRarity.class);
             case RARE: return EnumSet.of(CollectibleRarity.RARE, CollectibleRarity.EPIC, CollectibleRarity.LEGENDARY);
             case EPIC: return EnumSet.of(CollectibleRarity.EPIC, CollectibleRarity.LEGENDARY);
             case LEGENDARY: return EnumSet.of(CollectibleRarity.LEGENDARY);
@@ -470,7 +489,9 @@ public class GamificationService {
     }
 
     private BallBalancesResponse getBallBalances(Member member) {
-        return new BallBalancesResponse(ballTransactionRepository.getBalanceByMemberUuid(member.getUUID()));
+        return new BallBalancesResponse(
+                ballTransactionRepository.getBalanceByMemberUuidAndBallType(member.getUUID(), BallType.NORMAL),
+                ballTransactionRepository.getBalanceByMemberUuidAndBallType(member.getUUID(), BallType.MASTER));
     }
 
     private static class AchievementDefinition {
