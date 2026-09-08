@@ -13,6 +13,7 @@ import org.poolc.api.common.exception.ConflictException;
 import org.poolc.api.common.domain.YearSemester;
 import org.poolc.api.gamification.domain.BallTransaction;
 import org.poolc.api.gamification.domain.BallTransactionType;
+import org.poolc.api.gamification.domain.BallType;
 import org.poolc.api.gamification.domain.CollectionDraw;
 import org.poolc.api.gamification.domain.AchievementProgress;
 import org.poolc.api.gamification.domain.CollectibleCatalog;
@@ -95,7 +96,7 @@ class GamificationServiceTest {
         when(ballTransactionRepository.getAmountByMemberUuidAndTypeAndSource(
                 "member-uuid", BallTransactionType.ACTIVITY_HOUR_REWARD, "ACTIVITY_HOURS", currentSemester()))
                 .thenReturn(1L);
-        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(3L);
+        when(ballTransactionRepository.getBalanceByMemberUuidAndBallType("member-uuid", BallType.NORMAL)).thenReturn(3L);
         when(collectionDrawRepository.findAllByMemberUuidWithCollectible("member-uuid")).thenReturn(Collections.emptyList());
         when(collectibleCatalogRepository.countByEnabledTrue()).thenReturn(0L);
 
@@ -113,7 +114,7 @@ class GamificationServiceTest {
         when(ballTransactionRepository.getAmountByMemberUuidAndTypeAndSource(
                 "member-uuid", BallTransactionType.ACTIVITY_HOUR_REWARD, "ACTIVITY_HOURS", currentSemester()))
                 .thenReturn(4L);
-        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(4L);
+        when(ballTransactionRepository.getBalanceByMemberUuidAndBallType("member-uuid", BallType.NORMAL)).thenReturn(4L);
         when(collectionDrawRepository.findAllByMemberUuidWithCollectible("member-uuid")).thenReturn(Collections.emptyList());
         when(collectibleCatalogRepository.countByEnabledTrue()).thenReturn(0L);
 
@@ -140,7 +141,7 @@ class GamificationServiceTest {
         when(ballTransactionRepository.getAmountByMemberUuidAndTypeAndSource(
                 eq("member-uuid"), eq(BallTransactionType.ACTIVITY_HOUR_REWARD), eq("ACTIVITY_HOURS"), eq(currentSemester())))
                 .thenReturn(0L);
-        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(0L);
+        when(ballTransactionRepository.getBalanceByMemberUuidAndBallType("member-uuid", BallType.NORMAL)).thenReturn(0L);
 
         assertThatThrownBy(() -> service.draw(member)).isInstanceOf(ConflictException.class);
 
@@ -154,7 +155,7 @@ class GamificationServiceTest {
         when(ballTransactionRepository.getAmountByMemberUuidAndTypeAndSource(
                 eq("member-uuid"), eq(BallTransactionType.ACTIVITY_HOUR_REWARD), eq("ACTIVITY_HOURS"), eq(currentSemester())))
                 .thenReturn(0L);
-        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(1L);
+        when(ballTransactionRepository.getBalanceByMemberUuidAndBallType("member-uuid", BallType.NORMAL)).thenReturn(1L);
         for (CollectibleRarity rarity : CollectibleRarity.values()) {
             when(collectibleCatalogRepository.existsUncollectedVariantByMemberUuidAndRarity("member-uuid", rarity, false))
                     .thenReturn(false);
@@ -175,7 +176,7 @@ class GamificationServiceTest {
         when(ballTransactionRepository.getAmountByMemberUuidAndTypeAndSource(
                 eq("member-uuid"), eq(BallTransactionType.ACTIVITY_HOUR_REWARD), eq("ACTIVITY_HOURS"), eq(currentSemester())))
                 .thenReturn(0L);
-        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(1L);
+        when(ballTransactionRepository.getBalanceByMemberUuidAndBallType("member-uuid", BallType.NORMAL)).thenReturn(1L);
         when(collectibleCatalogRepository.existsUncollectedVariantByMemberUuidAndRarity("member-uuid", CollectibleRarity.COMMON, false))
                 .thenReturn(true);
         when(collectibleCatalogRepository.findUncollectedVariantByMemberUuidAndRarity(eq("member-uuid"), eq(CollectibleRarity.COMMON), eq(false), any(Pageable.class)))
@@ -198,14 +199,14 @@ class GamificationServiceTest {
     }
 
     @Test
-    void shinyDrawConsumesTwentyBallsAndCreatesAShinyCollectionRecord() {
+    void shinyDrawConsumesOneMasterBallAndCreatesAShinyCollectionRecord() {
         CollectibleCatalog collectible = org.mockito.Mockito.mock(CollectibleCatalog.class);
         CollectionDraw savedDraw = org.mockito.Mockito.mock(CollectionDraw.class);
         when(memberService.getMyActivitySummary(member)).thenReturn(activitySummary("0"));
         when(ballTransactionRepository.getAmountByMemberUuidAndTypeAndSource(
                 eq("member-uuid"), eq(BallTransactionType.ACTIVITY_HOUR_REWARD), eq("ACTIVITY_HOURS"), eq(currentSemester())))
                 .thenReturn(0L);
-        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(20L);
+        when(ballTransactionRepository.getBalanceByMemberUuidAndBallType("member-uuid", BallType.MASTER)).thenReturn(1L);
         when(collectibleCatalogRepository.existsUncollectedVariantByMemberUuidAndRarity("member-uuid", CollectibleRarity.COMMON, true))
                 .thenReturn(true);
         when(collectibleCatalogRepository.findUncollectedVariantByMemberUuidAndRarity(eq("member-uuid"), eq(CollectibleRarity.COMMON), eq(true), any(Pageable.class)))
@@ -225,7 +226,8 @@ class GamificationServiceTest {
         assertThat(drawCaptor.getValue().isShiny()).isTrue();
         ArgumentCaptor<BallTransaction> transactionCaptor = ArgumentCaptor.forClass(BallTransaction.class);
         verify(ballTransactionRepository).save(transactionCaptor.capture());
-        assertThat(transactionCaptor.getValue().getAmount()).isEqualTo(-20);
+        assertThat(transactionCaptor.getValue().getAmount()).isEqualTo(-1);
+        assertThat(transactionCaptor.getValue().getBallType()).isEqualTo(BallType.MASTER);
     }
 
     @Test
@@ -388,7 +390,7 @@ class GamificationServiceTest {
         when(ballTransactionRepository.getAmountByMemberUuidAndTypeAndSource(
                 eq("member-uuid"), eq(BallTransactionType.ACTIVITY_HOUR_REWARD), eq("ACTIVITY_HOURS"), eq(currentSemester())))
                 .thenReturn(0L);
-        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(0L);
+        when(ballTransactionRepository.getBalanceByMemberUuidAndBallType("member-uuid", BallType.NORMAL)).thenReturn(0L);
         when(collectionDrawRepository.findAllByMemberUuidWithCollectible("member-uuid")).thenReturn(draws);
     }
 
@@ -397,7 +399,7 @@ class GamificationServiceTest {
         when(ballTransactionRepository.getAmountByMemberUuidAndTypeAndSource(
                 eq("member-uuid"), eq(BallTransactionType.ACTIVITY_HOUR_REWARD), eq("ACTIVITY_HOURS"), eq(currentSemester())))
                 .thenReturn(0L);
-        when(ballTransactionRepository.getBalanceByMemberUuid("member-uuid")).thenReturn(20L);
+        when(ballTransactionRepository.getBalanceByMemberUuidAndBallType("member-uuid", BallType.MASTER)).thenReturn(1L);
         when(collectionDrawRepository.findAllByMemberUuidWithCollectible("member-uuid")).thenReturn(draws);
         for (CollectibleRarity rarity : CollectibleRarity.values()) {
             when(collectibleCatalogRepository.existsUncollectedVariantByMemberUuidAndRarity("member-uuid", rarity, true))
