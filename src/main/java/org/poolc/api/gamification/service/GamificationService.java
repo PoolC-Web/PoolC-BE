@@ -374,21 +374,6 @@ public class GamificationService {
     }
 
     @Transactional
-    public List<DrawResponse> drawTen(Member authenticatedMember) {
-        Member member = memberRepository.findByUUIDForUpdate(authenticatedMember.getUUID())
-                .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다."));
-        synchronizeActivityHourReward(member);
-        if (ballTransactionRepository.getBalanceByMemberUuidAndBallType(member.getUUID(), BallType.NORMAL) < 10) {
-            throw new ConflictException("10연차에는 포켓볼 10개가 필요합니다.");
-        }
-        java.util.ArrayList<DrawResponse> draws = new java.util.ArrayList<>();
-        for (int index = 0; index < 10; index++) {
-            draws.add(drawForMember(member, false));
-        }
-        return draws;
-    }
-
-    @Transactional
     public BallBalancesResponse exchangeMasterBall(Member authenticatedMember) {
         Member member = memberRepository.findByUUIDForUpdate(authenticatedMember.getUUID())
                 .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다."));
