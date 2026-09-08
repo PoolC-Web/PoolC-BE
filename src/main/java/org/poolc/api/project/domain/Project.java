@@ -5,6 +5,7 @@ import org.poolc.api.common.domain.TimestampEntity;
 import org.poolc.api.project.vo.ProjectUpdateValues;
 
 import javax.persistence.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,8 +32,18 @@ public class Project extends TimestampEntity {
     @Column(name = "genre", nullable = false, columnDefinition = "varchar(255)")
     private String genre;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category")
+    private ProjectCategory category;
+
     @Column(name = "duration", nullable = false, columnDefinition = "varchar(255)")
     private String duration;
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
 
     @Column(name = "thumbnail_url", nullable = false, columnDefinition = "varchar(255)")
     private String thumbnailURL;
@@ -47,11 +58,14 @@ public class Project extends TimestampEntity {
     protected Project() {
     }
 
-    public Project(String name, String description, String genre, String duration, String thumbnailURL, String body) {
+    public Project(String name, String description, String genre, ProjectCategory category, LocalDate startDate, LocalDate endDate, String thumbnailURL, String body) {
         this.name = name;
         this.description = description;
         this.genre = genre;
-        this.duration = duration;
+        this.category = category;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.duration = formatDuration(startDate, endDate);
         this.thumbnailURL = thumbnailURL;
         this.body = body;
     }
@@ -64,10 +78,17 @@ public class Project extends TimestampEntity {
         this.name = projectUpdateValues.getName();
         this.description = projectUpdateValues.getDescription();
         this.genre = projectUpdateValues.getGenre();
-        this.duration = projectUpdateValues.getDuration();
+        this.category = projectUpdateValues.getCategory();
+        this.startDate = projectUpdateValues.getStartDate();
+        this.endDate = projectUpdateValues.getEndDate();
+        this.duration = formatDuration(startDate, endDate);
         this.thumbnailURL = projectUpdateValues.getThumbnailURL();
         this.body = projectUpdateValues.getBody();
         this.memberLoginIDs.clear();
         this.memberLoginIDs.addAll(projectUpdateValues.getMemberLoginIDs());
+    }
+
+    private String formatDuration(LocalDate startDate, LocalDate endDate) {
+        return endDate == null ? startDate + " ~" : startDate + " ~ " + endDate;
     }
 }

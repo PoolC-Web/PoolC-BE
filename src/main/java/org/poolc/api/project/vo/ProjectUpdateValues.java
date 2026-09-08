@@ -3,7 +3,9 @@ package org.poolc.api.project.vo;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Getter;
 import org.poolc.api.project.dto.UpdateProjectRequest;
+import org.poolc.api.project.domain.ProjectCategory;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -11,7 +13,9 @@ public class ProjectUpdateValues {
     private final String name;
     private final String description;
     private final String genre;
-    private final String duration;
+    private final ProjectCategory category;
+    private final LocalDate startDate;
+    private final LocalDate endDate;
     private final String thumbnailURL;
     private final String body;
     List<String> memberLoginIDs;
@@ -21,7 +25,9 @@ public class ProjectUpdateValues {
         this.name = request.getName();
         this.description = request.getDescription();
         this.genre = request.getGenre();
-        this.duration = request.getDuration();
+        this.category = request.getCategory();
+        this.startDate = request.getStartDate();
+        this.endDate = request.getEndDate();
         this.thumbnailURL = request.getThumbnailURL();
         this.body = request.getBody();
         this.memberLoginIDs = request.getMemberLoginIDs();

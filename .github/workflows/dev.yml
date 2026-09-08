@@ -1,56 +1,56 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
-name: Java CI with Gradle
-on:
-  push:
-    branches: [ "dev" ]
+name: Backend CI
 
-permissions:
-  contents: read
+on:
+  pull_request:
+    branches: [dev]
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+concurrency:
+  group: poolc-backend-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    name: Test backend
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: poolc_test
+          POSTGRES_USER: poolc
+          POSTGRES_PASSWORD: poolc_dev_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U poolc -d poolc_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    - name: Build with Gradle
-      #uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
-      #with:
-      #  arguments: build
-      run: ./gradlew clean build --exclude-task test
-    - name: make directory for transfer
-      run: mkdir palkia
-    - name: Copy Jar
-      run: cp ./build/libs/*.jar ./palkia/
-    - name: copy file via ssh password
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.DEV_HOST }}
-        username: ${{ secrets.DEV_USER }}
-        password: ${{ secrets.DEV_PASSWORD }}
-        key: ${{ secrets.DEV_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        source: "./palkia/*.jar"
-        target: /home/jimmy/k8s/
-    - name: restart server
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.DEV_HOST }}
-        username: ${{ secrets.DEV_USER }}
-        password: ${{ secrets.DEV_PASSWORD }}
-        key: ${{ secrets.DEV_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        script: |
-          kubectl delete deployment palkia-deployment
-          kubectl apply -f ./k8s/palkia-deployment.yaml
-          kubectl rollout status deployment/palkia-deployment
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+          cache: gradle
+      - name: Run tests and package application
+        env:
+          DB_HOST: localhost:5432
+          TEST_DB_NAME: poolc_test
+          DB_USER_NAME: poolc
+          DB_PASSWORD: poolc_dev_password
+          PROJECT_NAME_HERE_SECRET_KEY: ci_test_secret_key
+          EXPIRE_LENGTH_IN_MILLISECONDS: "3600000"
+          FILE_DIR: ${{ runner.temp }}/poolc-files
+          EMAIL_ADDRESS: ci@example.com
+          EMAIL_PASSWORD: dummy
+          NAVER_BOOK_API_URL: https://openapi.naver.com/v1/search/book.json
+          NAVER_BOOK_CLIENT_ID: dummy
+          NAVER_BOOK_CLIENT_SECRET: dummy
+          KUBERNETES_API_KEY: local-ci
+        run: ./gradlew test bootJar --no-daemon

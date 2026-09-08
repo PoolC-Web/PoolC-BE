@@ -11,6 +11,8 @@ import org.poolc.api.AcceptanceTest;
 import org.poolc.api.auth.dto.AuthResponse;
 import org.poolc.api.member.domain.MemberRole;
 import org.poolc.api.member.dto.*;
+import org.poolc.api.poolc.PoolcAcceptanceTest;
+import org.poolc.api.poolc.dto.UpdatePoolcRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -77,6 +79,33 @@ public class MemberAcceptanceTest extends AcceptanceTest {
 
     @Order(5)
     @Test
+    void unacceptedMemberCanGetOwnActivitySummary() {
+        String adminToken = adminLogin();
+        UpdatePoolcRequest openSubscription = new UpdatePoolcRequest(
+                "전영주", "01067679584", "공A 537호", null, "프로그래밍 동아리", null, true, null);
+        UpdatePoolcRequest closeSubscription = new UpdatePoolcRequest(
+                "전영주", "01067679584", "공A 537호", null, "프로그래밍 동아리", null, false, null);
+
+        PoolcAcceptanceTest.updatePoolcInfo(adminToken, openSubscription);
+        try {
+            ExtractableResponse<Response> response = RestAssured
+                    .given().log().all()
+                    .auth().oauth2(unacceptanceLogin())
+                    .accept(MediaType.APPLICATION_JSON_VALUE)
+                    .when().get("/member/me/activity-summary")
+                    .then().log().all()
+                    .extract();
+
+            MyActivitySummaryResponse summary = response.as(MyActivitySummaryResponse.class);
+            assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
+            assertThat(summary.getTotalHours()).isZero();
+        } finally {
+            PoolcAcceptanceTest.updatePoolcInfo(adminToken, closeSubscription);
+        }
+    }
+
+    @Order(6)
+    @Test
     void getAllMembersAsAdmin() {
         String accessToken = adminLogin();
 
@@ -87,7 +116,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         MemberListResponse responseBody = response.body().as(MemberListResponse.class);
     }
 
-    @Order(6)
+    @Order(7)
     @Test
     void getAllMembersAsMember() {
         String accessToken = memberLogin();
@@ -107,7 +136,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         assertThat(memberStatuses).isEqualTo(0);
     }
 
-    @Order(7)
+    @Order(8)
     @Test
     void updateWrongPasswordCheckMemberInfo() {
         String accessToken = updateMemberLogin();
@@ -116,7 +145,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         assertThat(response.statusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
     }
 
-    @Order(8)
+    @Order(9)
     @Test
     void updateMemberInfo() {
         String accessToken = updateMemberLogin();
@@ -130,7 +159,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         assertThat(responseBody.getName()).isEqualTo("NEW_MEMBER_NAME");
     }
 
-    @Order(9)
+    @Order(10)
     @Test
     void ActivateMember() {
         String accessToken = adminLogin();
@@ -145,7 +174,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         assertThat(responseBody.getIsActivated()).isEqualTo(true);
     }
 
-    @Order(10)
+    @Order(11)
     @Test
     void promoteAsAdmin() {
         String accessToken = adminLogin();
@@ -160,7 +189,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         assertThat(responseBody.getIsAdmin()).isEqualTo(true);
     }
 
-    @Order(11)
+    @Order(12)
     @Test
     void revokeAdminPrivileges() {
         String accessToken = adminLogin();
@@ -175,7 +204,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         assertThat(responseBody.getIsAdmin()).isEqualTo(false);
     }
 
-    @Order(12)
+    @Order(13)
     @Test
     public void 임원진X_UNACCEPTANCE회원_전체_삭제시_에러() {
         //given
@@ -188,7 +217,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         assertThat(response.statusCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
     }
 
-    @Order(13)
+    @Order(14)
     @Test
     public void 임원진_UNACCEPTANCE회원_전체_삭제() {
         //given
@@ -207,7 +236,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
 
     }
 
-    @Order(14)
+    @Order(15)
     @Test
     void adminUpdatesMemberStatusAsExpelled() {
         String accessToken = adminLogin();
@@ -217,7 +246,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
 
     }
 
-    @Order(15)
+    @Order(16)
     @Test
     void adminUpdatesMemberStatus() {
         String accessToken = adminLogin();
@@ -232,7 +261,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         assertThat(memberResponse.getRole()).isEqualTo(MemberRole.GRADUATED.name());
     }
 
-    @Order(16)
+    @Order(17)
     @Test
     void selfUpdateStatus() {
         String accessToken = loginRequest("MEMBER_ID3", "MEMBER_PASSWORD3")
@@ -247,7 +276,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         assertThat(memberResponse.getRole()).isEqualTo(MemberRole.COMPLETE.name());
     }
 
-    @Order(17)
+    @Order(18)
     @Test
     void updateIsExcepted() {
         String accessToken = adminLogin();

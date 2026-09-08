@@ -105,6 +105,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
                 .antMatchers(HttpMethod.POST, "/member").permitAll()
                 .antMatchers(HttpMethod.GET, "/member/me").not().hasAuthority(MemberRole.EXPELLED.name())
+                .antMatchers(HttpMethod.GET, "/member/me/activity-summary").not().hasAuthority(MemberRole.EXPELLED.name())
                 .antMatchers(HttpMethod.GET, "/member/role").not().hasAuthority(MemberRole.EXPELLED.name())
                 .antMatchers(HttpMethod.PUT, "/member/reset-password-token").permitAll()
                 .antMatchers(HttpMethod.PUT, "/member/reset-password").permitAll()
@@ -144,6 +145,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST,"/badge").hasAnyAuthority(MemberRole.ADMIN.name())
                 .antMatchers(HttpMethod.PUT,"/badge").hasAnyAuthority(MemberRole.ADMIN.name())
                 .antMatchers(HttpMethod.DELETE,"/badge").hasAnyAuthority(MemberRole.ADMIN.name())
+
+                .antMatchers("/gamification/admin/**").hasAuthority(MemberRole.ADMIN.name())
+                .antMatchers("/gamification/**").hasAuthority(MemberRole.MEMBER.name())
 
                 .antMatchers(HttpMethod.POST, "/interview/application/*").hasAuthority(MemberRole.UNACCEPTED.name())
                 .antMatchers(HttpMethod.DELETE, "/interview/application/*").hasAnyAuthority(MemberRole.UNACCEPTED.name(), MemberRole.ADMIN.name())

@@ -1,4 +1,3 @@
-FROM openjdk:11-jdk-slim
-ARG JAR_FILE=build/libs/*.jar
-COPY ${JAR_FILE} app.jar
+FROM eclipse-temurin:11-jre-jammy
+COPY build/libs/app.jar app.jar
 ENTRYPOINT ["java","-jar","/app.jar"]
