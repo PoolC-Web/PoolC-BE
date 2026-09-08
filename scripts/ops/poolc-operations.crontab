@@ -1,0 +1,3 @@
+CRON_TZ=Asia/Seoul
+17 3 * * * /home/ubuntu/scripts/poolc-db-backup.sh >> /home/ubuntu/logs/poolc-db-backup.log 2>&1
+42 4 * * * /home/ubuntu/backend/renew_cert.sh >> /home/ubuntu/logs/poolc-cert-renew.log 2>&1

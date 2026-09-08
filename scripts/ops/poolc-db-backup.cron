@@ -1,0 +1,2 @@
+CRON_TZ=Asia/Seoul
+17 3 * * * /home/ubuntu/scripts/poolc-db-backup.sh >> /home/ubuntu/logs/poolc-db-backup.log 2>&1

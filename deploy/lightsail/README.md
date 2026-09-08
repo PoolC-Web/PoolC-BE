@@ -10,6 +10,11 @@ Deployment identifiers and the GitHub OIDC role ARN are committed in
 
 Before enabling production deployment, configure the Lightsail server as an SSM
 managed node. The server keeps `/home/ubuntu/backend/.env.production` as the
-Docker runtime file. Its source of truth is the dotenv-formatted Secrets Manager
-secret `poolc/prod/backend-env`; update the local runtime copy only when a
-secret rotates.
+Docker runtime file. Its source of truth is the SecureString parameters under
+`/poolc/prod/backend/`. Every deployment renders the runtime file from that
+path before restarting the backend container.
+
+The production workflow also installs the tracked Nginx configuration,
+certificate-renewal files, backup script, cron schedule, and log rotation
+configuration before it validates and starts the Compose services. The current
+direct-JAR deployment layout is tracked in `docker-compose.legacy-runtime.yaml`.

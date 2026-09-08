@@ -71,31 +71,38 @@ public class GamificationService {
 
     private static final List<AchievementDefinition> ACHIEVEMENTS = List.of(
             new AchievementDefinition("DAILY_ATTENDANCE", "DAILY", "홈페이지에 로그인하기", "오늘 홈페이지에 로그인하세요.", 1, BallType.NORMAL, 1),
-            new AchievementDefinition("DAILY_CLUB_WIFI", "DAILY", "동아리방에서 출석하기", "동아리방 Wi-Fi에서 홈페이지에 접속하세요.", 1, BallType.NORMAL, 1),
-            new AchievementDefinition("DAILY_DRAW", "DAILY", "오늘 포켓몬 만나기", "오늘 포켓몬을 한 마리 뽑아보세요.", 1, BallType.NORMAL, 1),
-            new AchievementDefinition("SEASON_ACTIVITY_5", "SEASON", "이번 학기 활동 5시간", "이번 학기 활동 시간을 5시간 채우세요.", 5, BallType.NORMAL, 1),
-            new AchievementDefinition("SEASON_ACTIVITY_10", "SEASON", "이번 학기 활동 10시간", "이번 학기 활동 시간을 10시간 채우세요.", 10, BallType.NORMAL, 2),
-            new AchievementDefinition("SEASON_ACTIVITY_20", "SEASON", "이번 학기 활동 20시간", "이번 학기 활동 시간을 20시간 채우세요.", 20, BallType.NORMAL, 3),
-            new AchievementDefinition("SEASON_ACTIVITY_30", "SEASON", "이번 학기 활동 30시간", "이번 학기 활동 시간을 30시간 채우세요.", 30, BallType.NORMAL, 5),
-            new AchievementDefinition("SEASON_ATTENDANCE_3", "SEASON", "이번 학기 로그인 3회", "이번 학기 홈페이지에 3회 로그인하세요.", 3, BallType.NORMAL, 1),
-            new AchievementDefinition("SEASON_ATTENDANCE_6", "SEASON", "이번 학기 로그인 6회", "이번 학기 홈페이지에 6회 로그인하세요.", 6, BallType.NORMAL, 2),
-            new AchievementDefinition("SEASON_ATTENDANCE_10", "SEASON", "이번 학기 로그인 10회", "이번 학기 홈페이지에 10회 로그인하세요.", 10, BallType.NORMAL, 3),
-            new AchievementDefinition("SEASON_PARTICIPATION", "SEASON", "이번 학기 활동 참여", "이번 학기 세미나/스터디에 참여하세요.", 1, BallType.NORMAL, 1),
-            new AchievementDefinition("SEASON_SCRAPS", "SEASON", "이번 학기 스크랩 5개", "이번 학기에 게시글 5개를 스크랩하세요.", 5, BallType.NORMAL, 1),
-            new AchievementDefinition("SEASON_COLLECTION", "SEASON", "이번 학기 포켓몬 5종 수집", "이번 학기에 포켓몬 5종을 수집하세요.", 5, BallType.NORMAL, 1),
-            new AchievementDefinition("PERMANENT_PROFILE", "PERMANENT", "프로필 완성", "프로필 정보를 완성하세요.", 1, BallType.NORMAL, 2),
-            new AchievementDefinition("PERMANENT_ATTENDANCE", "PERMANENT", "첫 활동 출석", "첫 활동에 출석하세요.", 1, BallType.NORMAL, 2),
-            new AchievementDefinition("PERMANENT_ACTIVITY_PARTICIPATION", "PERMANENT", "첫 활동 참여", "첫 세미나/스터디에 참여하세요.", 1, BallType.NORMAL, 2),
-            new AchievementDefinition("PERMANENT_PROJECT", "PERMANENT", "첫 프로젝트 참여", "첫 프로젝트에 참여하세요.", 1, BallType.NORMAL, 2),
-            new AchievementDefinition("PERMANENT_COLLECTION", "PERMANENT", "첫 포켓몬 획득", "첫 포켓몬을 획득하세요.", 1, BallType.NORMAL, 2),
-            new AchievementDefinition("PERMANENT_SHINY", "PERMANENT", "첫 이로치 획득", "첫 이로치 포켓몬을 획득하세요.", 1, BallType.NORMAL, 5),
-            new AchievementDefinition("PERMANENT_ADMIN", "PERMANENT", "임원진 되기", "임원진 역할을 획득하세요.", 1, BallType.NORMAL, 5),
-            new AchievementDefinition("PERMANENT_TECHNICIAN", "PERMANENT", "기여자 되기", "기여자 역할을 획득하세요.", 1, BallType.NORMAL, 5),
-            new AchievementDefinition("PERMANENT_HOST_10", "PERMANENT", "세미나 10회 개최", "세미나를 10회 개최하세요.", 10, BallType.NORMAL, 10),
-            new AchievementDefinition("PERMANENT_HOURS_50", "PERMANENT", "총 활동 시간 50시간", "총 활동 시간을 50시간 채우세요.", 50, BallType.NORMAL, 5),
-            new AchievementDefinition("PERMANENT_HOURS_100", "PERMANENT", "총 활동 시간 100시간", "총 활동 시간을 100시간 채우세요.", 100, BallType.NORMAL, 10),
-            new AchievementDefinition("REPEAT_ATTENDANCE", "REPEATABLE", "활동에 참여하기", "활동에 참석할 때마다 받을 수 있어요.", 1, BallType.NORMAL, 1),
-            new AchievementDefinition("REPEAT_DRAW", "REPEATABLE", "포켓몬 3마리 만나기", "포켓몬을 3마리 만날 때마다 받을 수 있어요.", 3, BallType.NORMAL, 1)
+            new AchievementDefinition("DAILY_CLUB_WIFI", "DAILY", "동아리방에서 출석하기", "동아리방 Wi-Fi에서 홈페이지에 접속하세요.", 1, BallType.NORMAL, 3),
+            new AchievementDefinition("DAILY_DRAW", "DAILY", "오늘 포켓몬 만나기", "오늘 포켓몬을 한 마리 뽑아보세요.", 1, BallType.NORMAL, 2),
+            new AchievementDefinition("SEASON_ACTIVITY_5", "SEASON", "이번 학기 활동 5시간", "이번 학기 활동 시간을 5시간 채우세요.", 5, BallType.NORMAL, 5),
+            new AchievementDefinition("SEASON_ACTIVITY_10", "SEASON", "이번 학기 활동 10시간", "이번 학기 활동 시간을 10시간 채우세요.", 10, BallType.NORMAL, 10),
+            new AchievementDefinition("SEASON_ACTIVITY_15", "SEASON", "이번 학기 활동 15시간", "이번 학기 활동 시간을 15시간 채우세요.", 15, BallType.NORMAL, 15),
+            new AchievementDefinition("SEASON_ACTIVITY_20", "SEASON", "이번 학기 활동 20시간", "이번 학기 활동 시간을 20시간 채우세요.", 20, BallType.NORMAL, 20),
+            new AchievementDefinition("SEASON_ACTIVITY_25", "SEASON", "이번 학기 활동 25시간", "이번 학기 활동 시간을 25시간 채우세요.", 25, BallType.NORMAL, 25),
+            new AchievementDefinition("SEASON_ACTIVITY_30", "SEASON", "이번 학기 활동 30시간", "이번 학기 활동 시간을 30시간 채우세요.", 30, BallType.NORMAL, 30),
+            new AchievementDefinition("SEASON_ATTENDANCE_2", "SEASON", "이번 학기 로그인 2회", "이번 학기 홈페이지에 2회 로그인하세요.", 2, BallType.NORMAL, 5),
+            new AchievementDefinition("SEASON_ATTENDANCE_4", "SEASON", "이번 학기 로그인 4회", "이번 학기 홈페이지에 4회 로그인하세요.", 4, BallType.NORMAL, 5),
+            new AchievementDefinition("SEASON_ATTENDANCE_6", "SEASON", "이번 학기 로그인 6회", "이번 학기 홈페이지에 6회 로그인하세요.", 6, BallType.NORMAL, 5),
+            new AchievementDefinition("SEASON_ATTENDANCE_8", "SEASON", "이번 학기 로그인 8회", "이번 학기 홈페이지에 8회 로그인하세요.", 8, BallType.NORMAL, 5),
+            new AchievementDefinition("SEASON_ATTENDANCE_10", "SEASON", "이번 학기 로그인 10회", "이번 학기 홈페이지에 10회 로그인하세요.", 10, BallType.NORMAL, 10),
+            new AchievementDefinition("SEASON_PARTICIPATION", "SEASON", "이번 학기 활동 참여", "이번 학기 세미나/스터디에 참여하세요.", 1, BallType.NORMAL, 5),
+            new AchievementDefinition("SEASON_SCRAPS", "SEASON", "이번 학기 스크랩 5개", "이번 학기에 게시글 5개를 스크랩하세요.", 5, BallType.NORMAL, 5),
+            new AchievementDefinition("SEASON_COLLECTION", "SEASON", "이번 학기 포켓몬 5종 수집", "이번 학기에 포켓몬 5종을 수집하세요.", 5, BallType.NORMAL, 10),
+            new AchievementDefinition("PERMANENT_PROFILE", "PERMANENT", "프로필 완성", "프로필 정보를 완성하세요.", 1, BallType.NORMAL, 5),
+            new AchievementDefinition("PERMANENT_ATTENDANCE", "PERMANENT", "첫 활동 출석", "첫 활동에 출석하세요.", 1, BallType.NORMAL, 5),
+            new AchievementDefinition("PERMANENT_ACTIVITY_PARTICIPATION", "PERMANENT", "첫 활동 참여", "첫 세미나/스터디에 참여하세요.", 1, BallType.NORMAL, 5),
+            new AchievementDefinition("PERMANENT_PROJECT", "PERMANENT", "첫 프로젝트 참여", "첫 프로젝트에 참여하세요.", 1, BallType.NORMAL, 10),
+            new AchievementDefinition("PERMANENT_COLLECTION", "PERMANENT", "첫 포켓몬 획득", "첫 포켓몬을 획득하세요.", 1, BallType.NORMAL, 5),
+            new AchievementDefinition("PERMANENT_SHINY", "PERMANENT", "첫 이로치 획득", "첫 이로치 포켓몬을 획득하세요.", 1, BallType.NORMAL, 10),
+            new AchievementDefinition("PERMANENT_ADMIN", "PERMANENT", "임원진 되기", "임원진 역할을 획득하세요.", 1, BallType.NORMAL, 30),
+            new AchievementDefinition("PERMANENT_TECHNICIAN", "PERMANENT", "기여자 되기", "기여자 역할을 획득하세요.", 1, BallType.NORMAL, 30),
+            new AchievementDefinition("PERMANENT_HOST_3", "PERMANENT", "세미나 3회 개최", "세미나를 3회 개최하세요.", 3, BallType.NORMAL, 15),
+            new AchievementDefinition("PERMANENT_HOST_6", "PERMANENT", "세미나 6회 개최", "세미나를 6회 개최하세요.", 6, BallType.NORMAL, 20),
+            new AchievementDefinition("PERMANENT_HOST_10", "PERMANENT", "세미나 10회 개최", "세미나를 10회 개최하세요.", 10, BallType.NORMAL, 35),
+            new AchievementDefinition("PERMANENT_HOURS_30", "PERMANENT", "총 활동 시간 30시간", "총 활동 시간을 30시간 채우세요.", 30, BallType.NORMAL, 5),
+            new AchievementDefinition("PERMANENT_HOURS_40", "PERMANENT", "총 활동 시간 40시간", "총 활동 시간을 40시간 채우세요.", 40, BallType.NORMAL, 10),
+            new AchievementDefinition("PERMANENT_HOURS_50", "PERMANENT", "총 활동 시간 50시간", "총 활동 시간을 50시간 채우세요.", 50, BallType.NORMAL, 10),
+            new AchievementDefinition("PERMANENT_HOURS_75", "PERMANENT", "총 활동 시간 75시간", "총 활동 시간을 75시간 채우세요.", 75, BallType.NORMAL, 15),
+            new AchievementDefinition("PERMANENT_HOURS_100", "PERMANENT", "총 활동 시간 100시간", "총 활동 시간을 100시간 채우세요.", 100, BallType.NORMAL, 20)
     );
 
     @Transactional
@@ -167,20 +174,9 @@ public class GamificationService {
     }
 
     private Map<String, Integer> calculateAchievementProgress(Member member, LocalDate today, HttpServletRequest request) {
-        YearSemester semester = YearSemester.of(today);
-        List<Session> sessions = sessionRepository.findAllWithActivityAndAttendanceInSemester(
-                semester.getFirstDateFromYearSemester(), semester.getLastDateFromYearSemester(), today);
         int daily = 1;
         int dailyDraws = 0;
-        int repeatableAttendance = 0;
-        for (Session session : sessions) {
-            if (!session.getAttendedMemberLoginIDs().contains(member.getLoginID())) {
-                continue;
-            }
-            repeatableAttendance++;
-        }
         List<CollectionDraw> draws = collectionDrawRepository.findAllByMemberUuidWithCollectible(member.getUUID());
-        int seasonDraws = 0;
         Set<Long> seasonCollection = new java.util.HashSet<>();
         YearSemester currentSemester = YearSemester.of(today);
         for (CollectionDraw draw : draws) {
@@ -190,7 +186,6 @@ public class GamificationService {
             }
             if (!drawnDate.isBefore(currentSemester.getFirstDateFromYearSemester())
                     && !drawnDate.isAfter(currentSemester.getLastDateFromYearSemester())) {
-                seasonDraws++;
                 seasonCollection.add(draw.getCollectible().getId());
             }
         }
@@ -230,10 +225,14 @@ public class GamificationService {
         result.put("DAILY_DRAW", dailyDraws);
         result.put("SEASON_ACTIVITY_5", seasonHours);
         result.put("SEASON_ACTIVITY_10", seasonHours);
+        result.put("SEASON_ACTIVITY_15", seasonHours);
         result.put("SEASON_ACTIVITY_20", seasonHours);
+        result.put("SEASON_ACTIVITY_25", seasonHours);
         result.put("SEASON_ACTIVITY_30", seasonHours);
-        result.put("SEASON_ATTENDANCE_3", seasonLogins);
+        result.put("SEASON_ATTENDANCE_2", seasonLogins);
+        result.put("SEASON_ATTENDANCE_4", seasonLogins);
         result.put("SEASON_ATTENDANCE_6", seasonLogins);
+        result.put("SEASON_ATTENDANCE_8", seasonLogins);
         result.put("SEASON_ATTENDANCE_10", seasonLogins);
         result.put("SEASON_PARTICIPATION", seasonParticipation);
         result.put("SEASON_SCRAPS", seasonScraps);
@@ -246,11 +245,14 @@ public class GamificationService {
         result.put("PERMANENT_SHINY", firstShiny);
         result.put("PERMANENT_ADMIN", firstAdmin);
         result.put("PERMANENT_TECHNICIAN", firstTechnician);
+        result.put("PERMANENT_HOST_3", hostedSeminars);
+        result.put("PERMANENT_HOST_6", hostedSeminars);
         result.put("PERMANENT_HOST_10", hostedSeminars);
+        result.put("PERMANENT_HOURS_30", allHours);
+        result.put("PERMANENT_HOURS_40", allHours);
         result.put("PERMANENT_HOURS_50", allHours);
+        result.put("PERMANENT_HOURS_75", allHours);
         result.put("PERMANENT_HOURS_100", allHours);
-        result.put("REPEAT_ATTENDANCE", repeatableAttendance);
-        result.put("REPEAT_DRAW", seasonDraws);
         return result;
     }
 
@@ -360,7 +362,7 @@ public class GamificationService {
         Member member = memberRepository.findByUUIDForUpdate(authenticatedMember.getUUID())
                 .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다."));
         synchronizeActivityHourReward(member);
-        int drawCost = shiny ? 2 : 1;
+        int drawCost = shiny ? 20 : 1;
         BallType ballType = BallType.NORMAL;
         long ballCount = ballTransactionRepository.getBalanceByMemberUuid(member.getUUID());
         if (ballCount < drawCost) {

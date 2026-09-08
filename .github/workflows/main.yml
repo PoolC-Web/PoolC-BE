@@ -120,23 +120,41 @@ jobs:
           ECR_IMAGE: ${{ needs.image.outputs.image_uri }}
         run: |
           compose_base64="$(base64 < deploy/lightsail/docker-compose.production.yaml | tr -d '\n')"
+          env_renderer_base64="$(base64 < deploy/lightsail/render-env-from-ssm.sh | tr -d '\n')"
+          managed_files_base64="$(tar -czf - deploy/lightsail/nginx.conf deploy/lightsail/docker-compose.certbot.yaml deploy/lightsail/docker-compose.cert.renew.yaml deploy/lightsail/renew_cert.sh scripts/ops/backup-postgres-to-s3.sh scripts/ops/poolc-operations.crontab scripts/ops/poolc-db-backup.logrotate scripts/ops/poolc-cert-renew.logrotate | base64 -w 0)"
           ecr_registry="${ECR_IMAGE%%/*}"
           ecr_password_base64="$(aws ecr get-login-password --region "${{ steps.config.outputs.aws_region }}" | base64 -w 0)"
           command_lines="$(jq -cn \
             --arg compose "$compose_base64" \
+            --arg env_renderer "$env_renderer_base64" \
+            --arg managed_files "$managed_files_base64" \
             --arg image "$ECR_IMAGE" \
             --arg registry "$ecr_registry" \
             --arg password "$ecr_password_base64" \
             '[
               "set -eu",
-              "install -d -m 700 /home/ubuntu/backend",
+              "install -d -m 700 /home/ubuntu/backend /home/ubuntu/scripts /home/ubuntu/logs /tmp/poolc-managed-files",
+              "printf %s \($managed_files) | base64 -d | tar -xzf - -C /tmp/poolc-managed-files",
               "printf %s \($compose) | base64 -d > /home/ubuntu/backend/docker-compose.production.yaml",
               "chmod 600 /home/ubuntu/backend/docker-compose.production.yaml",
+              "printf %s \($env_renderer) | base64 -d > /home/ubuntu/backend/render-env-from-ssm.sh",
+              "chmod 700 /home/ubuntu/backend/render-env-from-ssm.sh",
+              "install -m 644 /tmp/poolc-managed-files/deploy/lightsail/nginx.conf /home/ubuntu/backend/nginx.conf",
+              "install -m 644 /tmp/poolc-managed-files/deploy/lightsail/docker-compose.certbot.yaml /home/ubuntu/backend/docker-compose.certbot.yaml",
+              "install -m 644 /tmp/poolc-managed-files/deploy/lightsail/docker-compose.cert.renew.yaml /home/ubuntu/backend/docker-compose.cert.renew.yaml",
+              "install -m 700 /tmp/poolc-managed-files/deploy/lightsail/renew_cert.sh /home/ubuntu/backend/renew_cert.sh",
+              "install -m 700 /tmp/poolc-managed-files/scripts/ops/backup-postgres-to-s3.sh /home/ubuntu/scripts/poolc-db-backup.sh",
+              "install -m 600 /tmp/poolc-managed-files/scripts/ops/poolc-operations.crontab /tmp/poolc-operations.crontab",
+              "crontab /tmp/poolc-operations.crontab",
+              "sudo install -m 644 /tmp/poolc-managed-files/scripts/ops/poolc-db-backup.logrotate /etc/logrotate.d/poolc-db-backup",
+              "sudo install -m 644 /tmp/poolc-managed-files/scripts/ops/poolc-cert-renew.logrotate /etc/logrotate.d/poolc-cert-renew",
+              "sudo -u ubuntu /home/ubuntu/backend/render-env-from-ssm.sh",
               "printf %s \($password) | base64 -d | docker login --username AWS --password-stdin \($registry)",
               "cd /home/ubuntu/backend",
+              "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml config --quiet",
+              "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml run --rm --no-deps nginx nginx -t",
               "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml pull palkia",
-              "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml up -d --no-deps palkia",
-              "docker compose -f docker-compose.production.yaml restart nginx",
+              "ECR_IMAGE=\"\($image)\" docker compose -f docker-compose.production.yaml up -d --no-deps palkia nginx",
               "docker compose -f docker-compose.production.yaml ps"
             ]')"
           command_id="$(aws ssm send-command \
