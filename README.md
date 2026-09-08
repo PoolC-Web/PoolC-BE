@@ -1,114 +1,144 @@
-# Palkia
+<div align="center">
 
-풀씨 백엔드 API 개편 프로젝트
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/PoolC/.github/main/profile/assets/poolc.dark.svg" />
+  <img src="https://raw.githubusercontent.com/PoolC/.github/main/profile/assets/poolc.vertical.svg" width="360" alt="PoolC" />
+</picture>
 
-## Getting Started
+# PoolC Backend
 
-### Requirements
+연세대학교 공과대학 프로그래밍 학술동아리 **PoolC** 홈페이지 API
 
-- Java 11 이상
+<img src="https://img.shields.io/badge/Java-11-437291?style=flat-square&logo=openjdk&logoColor=white" alt="Java 11" />
+<img src="https://img.shields.io/badge/Spring%20Boot-2.4-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot" />
+<img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+<img src="https://img.shields.io/badge/AWS-Lightsail%20%7C%20S3%20%7C%20SSM-FF9900?style=flat-square&logo=amazonaws&logoColor=white" alt="AWS" />
 
-### Environment Variables
+</div>
 
-**Terminal에서 실행할 경우**
+<br />
 
-```shell
-export PROJECT_NAME_HERE_SECRET_KEY=example_secret_key
-export EXPIRE_LENGTH_IN_MILLISECONDS=3600000
+## Features
+
+| 회원 · 운영 | 콘텐츠 | 게임화 |
+| :---: | :---: | :---: |
+| 인증 · 권한 · 회원 | 세미나 · 게시판 · 도서 · 프로젝트 | 포켓몬 도감 · 퀘스트 · 포켓볼 |
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/PoolC/.github/main/profile/assets/poolc-web-architecture.png" width="900" alt="PoolC Web Architecture" />
+</div>
+
+## Architecture
+
+```text
+Browser → CloudFront / Cloudflare → Nginx → Spring Boot → PostgreSQL
+                                             └────────→ Amazon S3
 ```
 
-혹은 [direnv](https://direnv.net/) 를 사용하여 환경변수 설정을 자동화 할 수 있습니다.
+| Area | Stack |
+| --- | --- |
+| API | Spring Boot · Spring Security · Spring Data JPA |
+| Data | PostgreSQL · Hibernate |
+| File storage | Amazon S3 |
+| Runtime | Docker · Amazon ECR · Lightsail · SSM Parameter Store |
+| Delivery | GitHub Actions |
+| Documentation | Swagger · Spring REST Docs |
 
-### Local Development
+## Local Development
 
-로컬 개발은 Docker Compose로 프론트엔드, PostgreSQL, MinIO, Spring Boot API를 함께 띄웁니다.
-호스트의 Java 버전과 관계없이 이 방식을 사용하세요.
+<img src="https://img.shields.io/badge/Docker%20Compose-required-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker Compose" />
 
-```shell
+```bash
 docker compose -f docker-compose.local.yml up -d
 ```
 
-API가 처음 기동되면 Hibernate가 빈 DB에 테이블을 생성합니다. 그 다음 개발용 seed를 넣습니다.
-이 seed는 로컬 DB의 주요 앱 테이블을 초기화하므로 운영 DB에 실행하면 안 됩니다.
+| Service | Address |
+| --- | --- |
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:8080 |
+| PostgreSQL | localhost:5432 |
+| MinIO Console | http://localhost:9001 |
 
-```shell
+개발 데이터가 필요하면 API 기동 후 seed를 실행합니다.
+
+```bash
 docker compose -f docker-compose.local.yml exec -T postgres \
   psql -U poolc -d poolc < scripts/local-dev/seed.sql
 ```
 
-개발용 계정은 모두 같은 비밀번호를 사용합니다.
+<details>
+<summary>개발 계정</summary>
 
 ```text
 admin / poolc1234
 president / poolc1234
-member1 / poolc1234
-member2 / poolc1234
-member3 / poolc1234
+member1 ~ member3 / poolc1234
 pending / poolc1234
 ```
 
-주요 로컬 주소는 다음과 같습니다.
+</details>
 
-```text
-Backend API: http://localhost:8080
-Frontend: http://localhost:3000
-PostgreSQL: localhost:5432
-MinIO API: http://localhost:9000
-MinIO Console: http://localhost:9001
-MinIO bucket: poolc-dev
-MinIO login: poolc / poolc_dev_password
-```
+## Environment
 
-컨테이너를 중지하려면 다음 명령을 사용합니다.
+운영 비밀값은 Git에 두지 않고 **AWS SSM Parameter Store**에서 관리합니다.
 
-```shell
-docker compose -f docker-compose.local.yml down
-```
+| Group | Variables |
+| --- | --- |
+| Database | `DB_HOST`, `DB_NAME`, `DB_USER_NAME`, `DB_PASSWORD` |
+| Auth | `PROJECT_NAME_HERE_SECRET_KEY`, `EXPIRE_LENGTH_IN_MILLISECONDS` |
+| Files | `FILE_STORAGE`, `FILE_S3_BUCKET`, `AWS_REGION` |
 
-**IntelliJ에서 실행할 경우**
+## Test & API Docs
 
-1. Run | Edit Configurations (`⌃⌥R` + `0`)
-2. Templates
-3. **Gradle** 에서
-
-- Gradle project: 프로젝트 root(/path/to/PROJECT_NAME_HERE)
-- tasks: *:test*
-- Environment variables: 위 환경변수 추가
-
-4. **Spring Boot** 도 Environment variables을 설정합니다.
-
-### Build
-
-```shell
-./gradlew build
-```
-
-### Usage
-
-```shell
-./gradlew bootRun
-```
-
-**주의:** *build & run* 및 *test* (`⌘,` > `Build, Execution, Deployment` > `Build Tools` > `Gradle`)를 intelliJ로 설정할 경우,
-java
-compiler(`⌘,` > `Build, Execution, Deployment` > `Compiler` > `Java Compiler` > `Additional command line parameters`)
-에 `-parameters` 파라미터를 추가해야 합니다.
-
-### Tests
-
-```shell
+```bash
 ./gradlew test
-```
-
-### Docs
-
-```shell
+./gradlew bootJar
 ./gradlew asciidoctor
 ```
 
-`/build/asciidoc/html5/api-doc.html` 에서 api 문서를 확인할 수 있습니다.
+<div align="center">
 
+[![Swagger](https://img.shields.io/badge/API%20Docs-Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](https://api.poolc.org/swagger-ui/)
 
-### Deploy
+</div>
 
-TODO with docker
+## Delivery
+
+```text
+master push
+  → test · package
+  → ECR image publish
+  → SSM Run Command
+  → Lightsail deploy
+```
+
+## Maintainer
+
+<div align="center">
+
+| [Mayne0213](https://github.com/Mayne0213) |
+| :---: |
+| <img src="https://github.com/Mayne0213.png?size=180" width="120" alt="Mayne0213" /> |
+| FE · BE · Infra · Handoff |
+
+</div>
+
+## Contributors & Alumni
+
+<div align="center">
+
+| [jinhodotchoi](https://github.com/jinhodotchoi) | [mingd1023](https://github.com/mingd1023) | [Hys-Lee](https://github.com/Hys-Lee) | [jimmy0006](https://github.com/jimmy0006) | [hcpak](https://github.com/hcpak) |
+| :---: | :---: | :---: | :---: | :---: |
+| <img src="https://github.com/jinhodotchoi.png?size=160" width="88" alt="jinhodotchoi" /> | <img src="https://github.com/mingd1023.png?size=160" width="88" alt="mingd1023" /> | <img src="https://github.com/Hys-Lee.png?size=160" width="88" alt="Hys-Lee" /> | <img src="https://github.com/jimmy0006.png?size=160" width="88" alt="jimmy0006" /> | <img src="https://github.com/hcpak.png?size=160" width="88" alt="hcpak" /> |
+| FE · BE | FE · BE | FE | FE · BE · Infra | BE |
+
+| [becooq81](https://github.com/becooq81) | [yoonseokch](https://github.com/yoonseokch) | [Jjungs7](https://github.com/Jjungs7) | [J3m3](https://github.com/J3m3) |
+| :---: | :---: | :---: | :---: |
+| <img src="https://github.com/becooq81.png?size=160" width="88" alt="becooq81" /> | <img src="https://github.com/yoonseokch.png?size=160" width="88" alt="yoonseokch" /> | <img src="https://github.com/Jjungs7.png?size=160" width="88" alt="Jjungs7" /> | <img src="https://github.com/J3m3.png?size=160" width="88" alt="J3m3" /> |
+| BE | BE | BE | Infra |
+
+</div>
+
+---
+
+PoolC 내부 운영 프로젝트입니다.
