@@ -98,6 +98,13 @@ public class GamificationController {
         return ResponseEntity.ok(gamificationService.claimAchievement(member, achievementKey, request));
     }
 
+    @PostMapping("/me/achievements/{achievementKey}/record")
+    public ResponseEntity<Void> recordAchievementEvent(
+            @AuthenticationPrincipal Member member, @PathVariable String achievementKey) {
+        gamificationService.recordPermanentAchievementEvent(member, achievementKey);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/admin/catalog/sync")
     public ResponseEntity<CatalogSyncRunResponse> startCatalogSync(@AuthenticationPrincipal Member member) {
         requireAdmin(member);
