@@ -11,6 +11,7 @@ import org.poolc.api.gamification.domain.CollectionDraw;
 import org.poolc.api.gamification.domain.CollectibleCatalog;
 import org.poolc.api.gamification.domain.CollectibleRarity;
 import org.poolc.api.gamification.domain.AchievementProgress;
+import org.poolc.api.gamification.repository.MemberFeaturedCollectibleRepository;
 import org.poolc.api.gamification.dto.CollectionItemResponse;
 import org.poolc.api.gamification.dto.AchievementResponse;
 import org.poolc.api.gamification.dto.BallBalancesResponse;
@@ -65,6 +66,7 @@ public class GamificationService {
     private final ActivityRepository activityRepository;
     private final ScrapRepository scrapRepository;
     private final ProjectRepository projectRepository;
+    private final MemberFeaturedCollectibleRepository featuredCollectibleRepository;
 
     @Value("${gamification.club-wifi.allowed-ips:127.0.0.1}")
     private String clubWifiAllowedIps;
@@ -93,6 +95,9 @@ public class GamificationService {
             new AchievementDefinition("PERMANENT_PROJECT", "PERMANENT", "첫 프로젝트 참여", "첫 프로젝트에 참여하세요.", 1, BallType.NORMAL, 10),
             new AchievementDefinition("PERMANENT_COLLECTION", "PERMANENT", "첫 포켓몬 획득", "첫 포켓몬을 획득하세요.", 1, BallType.NORMAL, 5),
             new AchievementDefinition("PERMANENT_SHINY", "PERMANENT", "첫 이로치 획득", "첫 이로치 포켓몬을 획득하세요.", 1, BallType.NORMAL, 10),
+            new AchievementDefinition("PERMANENT_REGULATION", "PERMANENT", "회칙 읽어보기", "PoolC 동아리 회칙을 확인하세요.", 1, BallType.NORMAL, 10),
+            new AchievementDefinition("PERMANENT_GITHUB", "PERMANENT", "GitHub 접속하기", "PoolC GitHub 조직을 방문하세요.", 1, BallType.NORMAL, 10),
+            new AchievementDefinition("PERMANENT_FEATURED_COLLECTIBLE", "PERMANENT", "포켓볼 대표 캐릭 설정하기", "대표 포켓몬을 지정하세요.", 1, BallType.NORMAL, 10),
             new AchievementDefinition("PERMANENT_ADMIN", "PERMANENT", "임원진 되기", "임원진 역할을 획득하세요.", 1, BallType.NORMAL, 30),
             new AchievementDefinition("PERMANENT_TECHNICIAN", "PERMANENT", "기여자 되기", "기여자 역할을 획득하세요.", 1, BallType.NORMAL, 30),
             new AchievementDefinition("PERMANENT_HOST_3", "PERMANENT", "세미나 3회 개최", "세미나를 3회 개최하세요.", 3, BallType.NORMAL, 15),
@@ -179,6 +184,17 @@ public class GamificationService {
         return getBallBalances(member);
     }
 
+    @Transactional
+    public void recordPermanentAchievementEvent(Member authenticatedMember, String achievementKey) {
+        if (!"PERMANENT_REGULATION".equals(achievementKey) && !"PERMANENT_GITHUB".equals(achievementKey)) {
+            throw new ConflictException("기록할 수 없는 업적입니다.");
+        }
+        Member member = memberRepository.findByUUIDForUpdate(authenticatedMember.getUUID())
+                .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다."));
+        achievementProgressRepository.findByMemberUuidAndAchievementKeyAndPeriodKey(member.getUUID(), achievementKey, "PERMANENT")
+                .orElseGet(() -> achievementProgressRepository.save(new AchievementProgress(member, achievementKey, "PERMANENT", 1)));
+    }
+
     private Map<String, Integer> calculateAchievementProgress(Member member, LocalDate today, HttpServletRequest request) {
         int daily = 1;
         int dailyDraws = 0;
@@ -225,6 +241,9 @@ public class GamificationService {
         int firstShiny = draws.stream().anyMatch(CollectionDraw::isShiny) ? 1 : 0;
         int firstAdmin = "ADMIN".equals(member.getRole()) || "SUPER_ADMIN".equals(member.getRole()) ? 1 : 0;
         int firstTechnician = "TECHNICIAN".equals(member.getRole()) ? 1 : 0;
+        int regulationRead = recordedPermanentEvent(member.getUUID(), "PERMANENT_REGULATION");
+        int githubVisited = recordedPermanentEvent(member.getUUID(), "PERMANENT_GITHUB");
+        int featuredCollectible = featuredCollectibleRepository.findByMemberUuid(member.getUUID()).isPresent() ? 1 : 0;
         int hostedSeminars = (int) activityRepository.findActivitiesByHost(member).stream()
                 .filter(activity -> Boolean.TRUE.equals(activity.getIsSeminar()))
                 .count();
@@ -252,6 +271,9 @@ public class GamificationService {
         result.put("PERMANENT_PROJECT", allProjects > 0 ? 1 : 0);
         result.put("PERMANENT_COLLECTION", firstCollection);
         result.put("PERMANENT_SHINY", firstShiny);
+        result.put("PERMANENT_REGULATION", regulationRead);
+        result.put("PERMANENT_GITHUB", githubVisited);
+        result.put("PERMANENT_FEATURED_COLLECTIBLE", featuredCollectible);
         result.put("PERMANENT_ADMIN", firstAdmin);
         result.put("PERMANENT_TECHNICIAN", firstTechnician);
         result.put("PERMANENT_HOST_3", hostedSeminars);
@@ -263,6 +285,13 @@ public class GamificationService {
         result.put("PERMANENT_HOURS_75", allHours);
         result.put("PERMANENT_HOURS_100", allHours);
         return result;
+    }
+
+    private int recordedPermanentEvent(String memberUuid, String achievementKey) {
+        return achievementProgressRepository
+                .findByMemberUuidAndAchievementKeyAndPeriodKey(memberUuid, achievementKey, "PERMANENT")
+                .map(AchievementProgress::getProgress)
+                .orElse(0);
     }
 
     private boolean isDateInRange(String value, LocalDate start, LocalDate end) {

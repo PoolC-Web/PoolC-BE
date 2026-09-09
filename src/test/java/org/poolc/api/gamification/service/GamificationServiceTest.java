@@ -27,6 +27,7 @@ import org.poolc.api.gamification.repository.AchievementProgressRepository;
 import org.poolc.api.gamification.repository.BallTransactionRepository;
 import org.poolc.api.gamification.repository.CollectionDrawRepository;
 import org.poolc.api.gamification.repository.CollectibleCatalogRepository;
+import org.poolc.api.gamification.repository.MemberFeaturedCollectibleRepository;
 import org.poolc.api.activity.repository.ActivityRepository;
 import org.poolc.api.activity.repository.SessionRepository;
 import org.poolc.api.member.domain.Member;
@@ -57,6 +58,7 @@ class GamificationServiceTest {
     @Mock private BallTransactionRepository ballTransactionRepository;
     @Mock private CollectionDrawRepository collectionDrawRepository;
     @Mock private CollectibleCatalogRepository collectibleCatalogRepository;
+    @Mock private MemberFeaturedCollectibleRepository featuredCollectibleRepository;
     @Mock private MemberRepository memberRepository;
     @Mock private MemberService memberService;
     @Mock private AchievementProgressRepository achievementProgressRepository;
@@ -73,7 +75,7 @@ class GamificationServiceTest {
         service = new GamificationService(
                 ballTransactionRepository, collectionDrawRepository, collectibleCatalogRepository,
                 memberRepository, memberService, achievementProgressRepository, sessionRepository,
-                activityRepository, scrapRepository, projectRepository);
+                activityRepository, scrapRepository, projectRepository, featuredCollectibleRepository);
         lenient().when(member.getUUID()).thenReturn("member-uuid");
         lenient().when(member.getLoginID()).thenReturn("member-login-id");
         lenient().when(memberRepository.findByUUID("member-uuid")).thenReturn(Optional.of(member));
