@@ -44,11 +44,11 @@ file:
   s3:
     bucket: ${FILE_S3_BUCKET:}
     region: ${AWS_REGION:ap-northeast-2}
-book:
-  api:
-    url: ${NAVER_BOOK_API_URL}
-    id: ${NAVER_BOOK_CLIENT_ID}
-    secret: ${NAVER_BOOK_CLIENT_SECRET}
+kakao:
+  book:
+    api:
+      url: ${KAKAO_BOOK_API_URL:https://dapi.kakao.com/v3/search/book}
+    rest-api-key: ${KAKAO_BOOK_REST_API_KEY}
 
 kubernetes:
   api:

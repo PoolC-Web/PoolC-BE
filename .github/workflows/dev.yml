@@ -49,8 +49,6 @@ jobs:
           FILE_DIR: ${{ runner.temp }}/poolc-files
           EMAIL_ADDRESS: ci@example.com
           EMAIL_PASSWORD: dummy
-          NAVER_BOOK_API_URL: https://openapi.naver.com/v1/search/book.json
-          NAVER_BOOK_CLIENT_ID: dummy
-          NAVER_BOOK_CLIENT_SECRET: dummy
+          KAKAO_BOOK_REST_API_KEY: dummy
           KUBERNETES_API_KEY: local-ci
         run: ./gradlew test bootJar --no-daemon
