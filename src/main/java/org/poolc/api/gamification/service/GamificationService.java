@@ -329,10 +329,15 @@ public class GamificationService {
         if (request == null) {
             return false;
         }
-        String remoteAddress = request.getRemoteAddr();
+        String remoteAddress = clientIp(request);
         return java.util.Arrays.stream(clubWifiAllowedIps.split(","))
                 .map(String::trim)
                 .anyMatch(remoteAddress::equals);
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        String realIp = request.getHeader("X-Real-IP");
+        return realIp != null && !realIp.isBlank() ? realIp.trim() : request.getRemoteAddr();
     }
 
     private String periodKey(String type, LocalDate date) {

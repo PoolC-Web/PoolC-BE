@@ -130,10 +130,14 @@ class GamificationServiceTest {
         ReflectionTestUtils.setField(service, "clubWifiAllowedIps", "203.0.113.10, 203.0.113.11");
         MockHttpServletRequest allowedRequest = new MockHttpServletRequest();
         allowedRequest.setRemoteAddr("203.0.113.10");
+        MockHttpServletRequest proxiedAllowedRequest = new MockHttpServletRequest();
+        proxiedAllowedRequest.setRemoteAddr("172.20.0.3");
+        proxiedAllowedRequest.addHeader("X-Real-IP", "203.0.113.11");
         MockHttpServletRequest rejectedRequest = new MockHttpServletRequest();
         rejectedRequest.setRemoteAddr("203.0.113.12");
 
         assertThat((Boolean) ReflectionTestUtils.invokeMethod(service, "isClubWifiRequest", allowedRequest)).isTrue();
+        assertThat((Boolean) ReflectionTestUtils.invokeMethod(service, "isClubWifiRequest", proxiedAllowedRequest)).isTrue();
         assertThat((Boolean) ReflectionTestUtils.invokeMethod(service, "isClubWifiRequest", rejectedRequest)).isFalse();
     }
 
