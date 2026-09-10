@@ -44,6 +44,11 @@ file:
   s3:
     bucket: ${FILE_S3_BUCKET:}
     region: ${AWS_REGION:ap-northeast-2}
+  orphan-cleanup:
+    enabled: ${FILE_ORPHAN_CLEANUP_ENABLED:false}
+    dry-run: ${FILE_ORPHAN_CLEANUP_DRY_RUN:true}
+    grace-period-hours: ${FILE_ORPHAN_CLEANUP_GRACE_PERIOD_HOURS:168}
+    cron: ${FILE_ORPHAN_CLEANUP_CRON:0 30 4 * * *}
 kakao:
   book:
     api:
