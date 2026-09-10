@@ -17,7 +17,7 @@ public class MemberResponseAssembler {
 
     public MemberResponse of(Member member) {
         String profileImageUrl = featuredCollectibleService.getProfileSpriteUrl(member)
-                .orElse(member.getProfileImageURL());
+                .orElse(null);
         return MemberResponse.of(member, profileImageUrl);
     }
 

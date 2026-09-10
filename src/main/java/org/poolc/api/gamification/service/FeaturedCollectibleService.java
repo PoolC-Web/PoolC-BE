@@ -42,7 +42,7 @@ public class FeaturedCollectibleService {
     public Map<String, String> getProfileSpriteUrls(Collection<Member> members) {
         Map<String, String> originalProfileImageUrls = new HashMap<>();
         for (Member member : members) {
-            originalProfileImageUrls.put(member.getUUID(), member.getProfileImageURL());
+            originalProfileImageUrls.put(member.getUUID(), null);
         }
         if (originalProfileImageUrls.isEmpty()) {
             return originalProfileImageUrls;

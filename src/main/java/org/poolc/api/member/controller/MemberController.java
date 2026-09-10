@@ -82,7 +82,7 @@ public class MemberController {
                 .map(project -> ProjectResponse.ofWithMemberResponses(project, memberResponseAssembler.ofAll(memberService.findMembers(project.getMemberLoginIDs()))))
                 .collect(Collectors.toList());
         String profileImageUrl = featuredCollectibleService.getProfileSpriteUrl(findMember)
-                .orElse(findMember.getProfileImageURL());
+                .orElse(null);
         MemberResponse response = MemberResponse.of(findMember, loginMember, hostActivityResponses, activityResponses, projectResponses, profileImageUrl);
         return ResponseEntity.ok().body(response);
     }

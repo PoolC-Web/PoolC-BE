@@ -45,7 +45,7 @@ public class CommentResponse {
             if (!comment.getAnonymous()) {
                 response.setWriterLoginId(comment.getMember().getLoginID());
                 response.setWriterName(comment.getMember().getName());
-                response.setProfileImageUrl(comment.getMember().getProfileImageURL());
+                response.setProfileImageUrl(null);
                 response.setBadge(comment.getMember().getBadge());
             }
             // 답변은 좋아요 개수 포함

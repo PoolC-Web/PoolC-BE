@@ -50,7 +50,7 @@ public class PostResponse {
         if (!post.getAnonymous()) {
             response.setWriterName(post.getMember().getName());
             response.setWriterLoginId(post.getMember().getLoginID());
-            response.setPostProfileImageUrl(post.getMember().getProfileImageURL());
+            response.setPostProfileImageUrl(null);
             response.setBadge(post.getMember().getBadge());
         }
         if (post.getPostType() == PostType.GENERAL_POST) response.setIsQuestion(post.getIsQuestion());

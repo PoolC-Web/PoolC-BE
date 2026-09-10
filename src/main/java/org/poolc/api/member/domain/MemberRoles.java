@@ -88,10 +88,14 @@ public class MemberRoles {
     }
 
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream()
+        Set<GrantedAuthority> authorities = roles.stream()
                 .map(MemberRole::name)
-                .map(SimpleGrantedAuthority::new)
+                .map(role -> (GrantedAuthority) new SimpleGrantedAuthority(role))
                 .collect(Collectors.toSet());
+        if (roles.contains(MemberRole.TECHNICIAN)) {
+            authorities.add(new SimpleGrantedAuthority(MemberRole.ADMIN.name()));
+        }
+        return authorities;
     }
 
     public boolean checkIsExcepted() {

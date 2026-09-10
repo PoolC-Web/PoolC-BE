@@ -13,8 +13,6 @@ public class MemberCreateValues {
     private final String department;
     private final String studentID;
     private final String introduction;
-    private final String profileImageURL;
-
 
     public MemberCreateValues(RegisterMemberRequest request) {
         name = request.getName();
@@ -25,6 +23,5 @@ public class MemberCreateValues {
         department = request.getDepartment();
         studentID = request.getStudentID();
         introduction = request.getIntroduction();
-        profileImageURL = request.getProfileImageURL();
     }
 }
