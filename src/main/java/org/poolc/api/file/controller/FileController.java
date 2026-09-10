@@ -71,7 +71,9 @@ public class FileController {
     }
 
     @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<String> uploadImage(@RequestPart MultipartFile original, @RequestPart MultipartFile card, @RequestPart MultipartFile detail) {
+    public ResponseEntity<String> uploadImage(@RequestPart("original") MultipartFile original,
+                                              @RequestPart("card") MultipartFile card,
+                                              @RequestPart("detail") MultipartFile detail) {
         try {
             if (!isImage(original) || !isImage(card) || !isImage(detail)) {
                 return ResponseEntity.badRequest().body("원본과 미리보기는 이미지 파일이어야 합니다");

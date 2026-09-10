@@ -16,9 +16,10 @@ public class CreatePoolcRequest {
     private final String mainImageUrl;
     private final Boolean isSubscriptionPeriod;
     private final String applyUri;
+    private final Integer minimumActivityHours;
 
     @JsonCreator
-    public CreatePoolcRequest(String presidentName, String phoneNumber, String location, String location_url, String introduction, String mainImageUrl, Boolean isSubscriptionPeriod, String applyUri) {
+    public CreatePoolcRequest(String presidentName, String phoneNumber, String location, String location_url, String introduction, String mainImageUrl, Boolean isSubscriptionPeriod, String applyUri, Integer minimumActivityHours) {
         this.presidentName = presidentName;
         this.phoneNumber = phoneNumber;
         this.location = location;
@@ -27,5 +28,10 @@ public class CreatePoolcRequest {
         this.mainImageUrl = mainImageUrl;
         this.isSubscriptionPeriod = isSubscriptionPeriod;
         this.applyUri = applyUri;
+        this.minimumActivityHours = minimumActivityHours;
+    }
+
+    public CreatePoolcRequest(String presidentName, String phoneNumber, String location, String locationUrl, String introduction, String mainImageUrl, Boolean isSubscriptionPeriod, String applyUri) {
+        this(presidentName, phoneNumber, location, locationUrl, introduction, mainImageUrl, isSubscriptionPeriod, applyUri, null);
     }
 }

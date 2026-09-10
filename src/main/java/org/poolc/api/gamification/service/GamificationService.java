@@ -126,13 +126,34 @@ public class GamificationService {
         Map<String, AchievementProgress> savedProgressByKey = achievementProgressRepository.findAllByMemberUuid(member.getUUID())
                 .stream()
                 .collect(Collectors.toMap(saved -> saved.getAchievementKey() + "|" + saved.getPeriodKey(), saved -> saved));
+        preserveAchievementProgress(member, today, progress, savedProgressByKey);
         return ACHIEVEMENTS.stream().map(definition -> {
             String periodKey = periodKey(definition.type, today);
             AchievementProgress saved = savedProgressByKey.get(definition.key + "|" + periodKey);
+            int storedProgress = saved == null ? 0 : saved.getProgress();
             return new AchievementResponse(definition.key, definition.type, definition.title, definition.description,
-                    definition.target, progress.get(definition.key), definition.rewardBallType.name(), definition.rewardAmount,
+                    definition.target, Math.max(progress.get(definition.key), storedProgress), definition.rewardBallType.name(), definition.rewardAmount,
                     saved != null && saved.isClaimed(), saved == null ? 0 : saved.getClaimedCount());
         }).collect(Collectors.toList());
+    }
+
+    private void preserveAchievementProgress(Member member, LocalDate today, Map<String, Integer> progress,
+                                             Map<String, AchievementProgress> savedProgressByKey) {
+        ACHIEVEMENTS.forEach(definition -> {
+            String periodKey = periodKey(definition.type, today);
+            String progressKey = definition.key + "|" + periodKey;
+            int currentProgress = progress.get(definition.key);
+            AchievementProgress saved = savedProgressByKey.get(progressKey);
+
+            if (saved == null && currentProgress > 0) {
+                saved = achievementProgressRepository.save(new AchievementProgress(
+                        member, definition.key, periodKey, currentProgress));
+                savedProgressByKey.put(progressKey, saved);
+            } else if (saved != null && currentProgress > saved.getProgress()) {
+                saved.updateProgress(currentProgress);
+                achievementProgressRepository.save(saved);
+            }
+        });
     }
 
     private void ensureDailyAttendance(Member member, LocalDate today) {

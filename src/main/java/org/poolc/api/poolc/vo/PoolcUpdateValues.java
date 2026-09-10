@@ -13,6 +13,7 @@ public class PoolcUpdateValues {
     private final String mainImageUrl;
     private final Boolean isSubscriptionPeriod;
     private final String applyUri;
+    private final Integer minimumActivityHours;
 
     public PoolcUpdateValues(UpdatePoolcRequest request) {
         this.presidentName = request.getPresidentName();
@@ -23,5 +24,6 @@ public class PoolcUpdateValues {
         this.mainImageUrl = request.getMainImageUrl();
         this.isSubscriptionPeriod = request.getIsSubscriptionPeriod();
         this.applyUri = request.getApplyUri();
+        this.minimumActivityHours = request.getMinimumActivityHours();
     }
 }

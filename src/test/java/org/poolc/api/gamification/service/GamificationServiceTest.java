@@ -393,6 +393,62 @@ class GamificationServiceTest {
                 .containsExactly(1, 30);
     }
 
+    @Test
+    void permanentAchievementRemainsCompletedAfterTheConditionChanges() {
+        AchievementProgress previouslyCompleted = new AchievementProgress(
+                member, "PERMANENT_ADMIN", "PERMANENT", 1);
+        when(member.getRole()).thenReturn("MEMBER");
+        when(memberService.getMyActivitySummary(member)).thenReturn(activitySummary("0"));
+        when(achievementProgressRepository.findAllByMemberUuid("member-uuid"))
+                .thenReturn(List.of(previouslyCompleted));
+
+        List<AchievementResponse> responses = service.getAchievements(member);
+
+        assertThat(responses)
+                .filteredOn(response -> "PERMANENT_ADMIN".equals(response.getKey()))
+                .singleElement()
+                .extracting(AchievementResponse::getProgress)
+                .isEqualTo(1);
+    }
+
+    @Test
+    void seasonAchievementKeepsItsHighestProgressForTheCurrentSemester() {
+        AchievementProgress previouslyRecorded = new AchievementProgress(
+                member, "SEASON_SCRAPS", currentSemester(), 5);
+        when(memberService.getMyActivitySummary(member)).thenReturn(activitySummary("0"));
+        when(achievementProgressRepository.findAllByMemberUuid("member-uuid"))
+                .thenReturn(List.of(previouslyRecorded));
+
+        List<AchievementResponse> responses = service.getAchievements(member);
+
+        assertThat(responses)
+                .filteredOn(response -> "SEASON_SCRAPS".equals(response.getKey()))
+                .singleElement()
+                .extracting(AchievementResponse::getProgress)
+                .isEqualTo(5);
+    }
+
+    @Test
+    void clubWifiAchievementProgressIsStoredForTheCurrentDay() {
+        ReflectionTestUtils.setField(service, "clubWifiAllowedIps", "203.0.113.10");
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("203.0.113.10");
+        when(memberService.getMyActivitySummary(member)).thenReturn(activitySummary("0"));
+        when(achievementProgressRepository.save(any(AchievementProgress.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.getAchievements(member, request);
+
+        ArgumentCaptor<AchievementProgress> progressCaptor = ArgumentCaptor.forClass(AchievementProgress.class);
+        verify(achievementProgressRepository, org.mockito.Mockito.atLeastOnce()).save(progressCaptor.capture());
+        assertThat(progressCaptor.getAllValues())
+                .anySatisfy(progress -> {
+                    assertThat(progress.getAchievementKey()).isEqualTo("DAILY_CLUB_WIFI");
+                    assertThat(progress.getPeriodKey()).isEqualTo(LocalDate.now().toString());
+                    assertThat(progress.getProgress()).isEqualTo(1);
+                });
+    }
+
     private MyActivitySummaryResponse activitySummary(String totalHours) {
         return MyActivitySummaryResponse.builder()
                 .totalHours(new BigDecimal(totalHours))

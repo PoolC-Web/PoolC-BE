@@ -14,9 +14,10 @@ public class PoolcResponse {
     private final String mainImageUrl;
     private final Boolean isSubscriptionPeriod;
     private final String applyUri;
+    private final Integer minimumActivityHours;
 
     @JsonCreator
-    public PoolcResponse(String presidentName, String phoneNumber, String location, String location_url, String introduction, String mainImageUrl, Boolean isSubscriptionPeriod, String applyLingUri) {
+    public PoolcResponse(String presidentName, String phoneNumber, String location, String location_url, String introduction, String mainImageUrl, Boolean isSubscriptionPeriod, String applyLingUri, Integer minimumActivityHours) {
         this.presidentName = presidentName;
         this.phoneNumber = phoneNumber;
         this.location = location;
@@ -25,10 +26,11 @@ public class PoolcResponse {
         this.mainImageUrl = mainImageUrl;
         this.isSubscriptionPeriod = isSubscriptionPeriod;
         this.applyUri = applyLingUri;
+        this.minimumActivityHours = minimumActivityHours;
     }
 
     public static PoolcResponse of(Poolc poolc) {
-        return new PoolcResponse(poolc.getPresidentName(), poolc.getPhoneNumber(), poolc.getLocation(), poolc.getLocationUrl(), poolc.getIntroduction(), poolc.getMainImageUrl(), poolc.getIsSubscriptionPeriod(), poolc.getApplyUri());
+        return new PoolcResponse(poolc.getPresidentName(), poolc.getPhoneNumber(), poolc.getLocation(), poolc.getLocationUrl(), poolc.getIntroduction(), poolc.getMainImageUrl(), poolc.getIsSubscriptionPeriod(), poolc.getApplyUri(), poolc.getMinimumActivityHours());
     }
 
 }

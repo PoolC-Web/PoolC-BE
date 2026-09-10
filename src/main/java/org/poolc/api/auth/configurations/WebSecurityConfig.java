@@ -99,6 +99,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST, "/book/*").hasAuthority(MemberRole.ADMIN.name())
                 .antMatchers(HttpMethod.PUT, "/book/*").hasAuthority(MemberRole.ADMIN.name())
                 .antMatchers(HttpMethod.DELETE, "/book/*").hasAuthority(MemberRole.ADMIN.name())
+                .antMatchers(HttpMethod.POST, "/official-activities/check-in/*").hasAuthority(MemberRole.MEMBER.name())
+                .antMatchers("/official-activities/**").hasAuthority(MemberRole.ADMIN.name())
                 .antMatchers(HttpMethod.PUT, "/book/borrow/*").hasAuthority(MemberRole.MEMBER.name())
                 .antMatchers(HttpMethod.PUT, "/book/return/*").hasAuthority(MemberRole.MEMBER.name())
                 .antMatchers("/book/**").hasAuthority(MemberRole.MEMBER.name())

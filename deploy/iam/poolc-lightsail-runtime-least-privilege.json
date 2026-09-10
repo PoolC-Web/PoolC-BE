@@ -1,0 +1,53 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadWriteApplicationFiles",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": [
+        "arn:aws:s3:::poolc-files-s3/objects/*",
+        "arn:aws:s3:::poolc-files-s3/previews/*"
+      ]
+    },
+    {
+      "Sid": "ListApplicationFiles",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::poolc-files-s3",
+      "Condition": {"StringLike": {"s3:prefix": ["objects/*", "previews/*"]}}
+    },
+    {
+      "Sid": "ListPokemonAssets",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::poolc-pokemon-assets-s3",
+      "Condition": {"StringLike": {"s3:prefix": ["pokemon/*"]}}
+    },
+    {
+      "Sid": "ReadWritePokemonAssets",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject"],
+      "Resource": "arn:aws:s3:::poolc-pokemon-assets-s3/pokemon/*"
+    },
+    {
+      "Sid": "ListBackupPrefix",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::poolc-db-backup-s3",
+      "Condition": {"StringLike": {"s3:prefix": ["postgres/*"]}}
+    },
+    {
+      "Sid": "WriteAndVerifyDatabaseBackups",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject", "s3:AbortMultipartUpload"],
+      "Resource": "arn:aws:s3:::poolc-db-backup-s3/postgres/*"
+    },
+    {
+      "Sid": "ReadBackendRuntimeParameters",
+      "Effect": "Allow",
+      "Action": ["ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath"],
+      "Resource": "arn:aws:ssm:ap-northeast-2:238851005341:parameter/poolc/prod/backend/*"
+    }
+  ]
+}

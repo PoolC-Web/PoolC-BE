@@ -13,6 +13,7 @@ public class PoolcCreateValues {
     private final String mainImageUrl;
     private final Boolean isSubscriptionPeriod;
     private final String applyUri;
+    private final Integer minimumActivityHours;
 
     public PoolcCreateValues(CreatePoolcRequest request) {
         this.presidentName = request.getPresidentName();
@@ -23,5 +24,6 @@ public class PoolcCreateValues {
         this.mainImageUrl = request.getMainImageUrl();
         this.isSubscriptionPeriod = request.getIsSubscriptionPeriod();
         this.applyUri = request.getApplyUri();
+        this.minimumActivityHours = request.getMinimumActivityHours();
     }
 }
