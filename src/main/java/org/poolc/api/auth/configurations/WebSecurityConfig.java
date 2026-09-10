@@ -136,6 +136,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.DELETE, "/activity/*").hasAuthority(MemberRole.MEMBER.name())
 
                 .antMatchers("/file").hasAuthority(MemberRole.MEMBER.name())
+                .antMatchers("/drive/**").hasAuthority(MemberRole.ADMIN.name())
 
                 .antMatchers(HttpMethod.GET,"/room/*").hasAnyAuthority(MemberRole.MEMBER.name())
                 .antMatchers(HttpMethod.POST,"/room/*").hasAnyAuthority(MemberRole.MEMBER.name())
