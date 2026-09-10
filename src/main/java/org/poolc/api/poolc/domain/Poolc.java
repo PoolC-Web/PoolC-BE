@@ -43,10 +43,13 @@ public class Poolc {
     @Column(name = "apply_uri", columnDefinition = "varchar(1024)")
     private String applyUri;
 
+    @Column(name = "minimum_activity_hours", nullable = false, columnDefinition = "integer default 10")
+    private Integer minimumActivityHours = 10;
+
     public Poolc() {
     }
 
-    public Poolc(Long id, String presidentName, String phoneNumber, String location, String location_url, String introduction, String mainImageUrl, Boolean isSubscriptionPeriod, String applyUri) {
+    public Poolc(Long id, String presidentName, String phoneNumber, String location, String location_url, String introduction, String mainImageUrl, Boolean isSubscriptionPeriod, String applyUri, Integer minimumActivityHours) {
         this.id = id;
         this.presidentName = presidentName;
         this.phoneNumber = phoneNumber;
@@ -56,6 +59,11 @@ public class Poolc {
         this.mainImageUrl = mainImageUrl;
         this.isSubscriptionPeriod = isSubscriptionPeriod;
         this.applyUri = applyUri;
+        this.minimumActivityHours = minimumActivityHours == null ? 10 : minimumActivityHours;
+    }
+
+    public Poolc(Long id, String presidentName, String phoneNumber, String location, String locationUrl, String introduction, String mainImageUrl, Boolean isSubscriptionPeriod, String applyUri) {
+        this(id, presidentName, phoneNumber, location, locationUrl, introduction, mainImageUrl, isSubscriptionPeriod, applyUri, 10);
     }
 
     public Poolc(String presidentName, String phoneNumber, String location, String location_url, String introduction, String mainImageUrl, Boolean isSubscriptionPeriod, String applyUri) {
@@ -78,6 +86,9 @@ public class Poolc {
         this.mainImageUrl = updateValues.getMainImageUrl();
         this.isSubscriptionPeriod = updateValues.getIsSubscriptionPeriod();
         this.applyUri = updateValues.getApplyUri();
+        if (updateValues.getMinimumActivityHours() != null) {
+            this.minimumActivityHours = updateValues.getMinimumActivityHours();
+        }
     }
 
     //TODO: refactoring 필요성 느껴짐
@@ -87,6 +98,10 @@ public class Poolc {
 
     // TODO: DB에 poolc 정보를 넣을 수 있으면 삭제
     public static Poolc of(PoolcCreateValues createValues) {
-        return new Poolc(createValues.getPresidentName(), createValues.getPhoneNumber(), createValues.getLocation(), createValues.getLocationUrl(), createValues.getIntroduction(), createValues.getMainImageUrl(), createValues.getIsSubscriptionPeriod(), createValues.getApplyUri());
+        Poolc poolc = new Poolc(createValues.getPresidentName(), createValues.getPhoneNumber(), createValues.getLocation(), createValues.getLocationUrl(), createValues.getIntroduction(), createValues.getMainImageUrl(), createValues.getIsSubscriptionPeriod(), createValues.getApplyUri());
+        if (createValues.getMinimumActivityHours() != null) {
+            poolc.minimumActivityHours = createValues.getMinimumActivityHours();
+        }
+        return poolc;
     }
 }
