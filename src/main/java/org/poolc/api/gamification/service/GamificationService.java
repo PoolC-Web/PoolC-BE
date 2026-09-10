@@ -89,6 +89,7 @@ public class GamificationService {
             new AchievementDefinition("SEASON_PARTICIPATION", "SEASON", "이번 학기 활동 참여", "이번 학기 세미나/스터디에 참여하세요.", 1, BallType.NORMAL, 5),
             new AchievementDefinition("SEASON_SCRAPS", "SEASON", "이번 학기 스크랩 5개", "이번 학기에 게시글 5개를 스크랩하세요.", 5, BallType.NORMAL, 5),
             new AchievementDefinition("SEASON_COLLECTION", "SEASON", "이번 학기 포켓몬 5종 수집", "이번 학기에 포켓몬 5종을 수집하세요.", 5, BallType.NORMAL, 10),
+            new AchievementDefinition("PERMANENT_MEMBER_APPROVED", "PERMANENT", "가입 승인 완료", "PoolC 회원으로 승인되었어요.", 1, BallType.NORMAL, 30),
             new AchievementDefinition("PERMANENT_PROFILE", "PERMANENT", "프로필 완성", "프로필 정보를 완성하세요.", 1, BallType.NORMAL, 5),
             new AchievementDefinition("PERMANENT_ATTENDANCE", "PERMANENT", "첫 활동 출석", "첫 활동에 출석하세요.", 1, BallType.NORMAL, 5),
             new AchievementDefinition("PERMANENT_ACTIVITY_PARTICIPATION", "PERMANENT", "첫 활동 참여", "첫 세미나/스터디에 참여하세요.", 1, BallType.NORMAL, 5),
@@ -236,6 +237,7 @@ public class GamificationService {
         List<org.poolc.api.project.domain.Project> projects = projectRepository.findProjectsByProjectMembers(member.getLoginID());
         int allProjects = projects.size();
         int allHours = totalRecognizedHours(member, relevantSessions, allProjects);
+        int memberApproved = member.isMember() ? 1 : 0;
         int firstProfile = hasCompleteProfile(member) ? 1 : 0;
         int firstCollection = draws.isEmpty() ? 0 : 1;
         int firstShiny = draws.stream().anyMatch(CollectionDraw::isShiny) ? 1 : 0;
@@ -265,6 +267,7 @@ public class GamificationService {
         result.put("SEASON_PARTICIPATION", seasonParticipation);
         result.put("SEASON_SCRAPS", seasonScraps);
         result.put("SEASON_COLLECTION", seasonCollection.size());
+        result.put("PERMANENT_MEMBER_APPROVED", memberApproved);
         result.put("PERMANENT_PROFILE", firstProfile);
         result.put("PERMANENT_ATTENDANCE", allAttendance > 0 ? 1 : 0);
         result.put("PERMANENT_ACTIVITY_PARTICIPATION", allActivityParticipation > 0 ? 1 : 0);

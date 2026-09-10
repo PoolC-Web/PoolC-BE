@@ -375,6 +375,24 @@ class GamificationServiceTest {
                 .isEqualTo(1);
     }
 
+    @Test
+    void approvedMemberCanClaimTheJoinApprovalAchievement() {
+        when(member.isMember()).thenReturn(true);
+        when(memberService.getMyActivitySummary(member)).thenReturn(activitySummary("0"));
+        when(achievementProgressRepository.findByMemberUuidAndAchievementKeyAndPeriodKey(any(), any(), any()))
+                .thenReturn(Optional.empty());
+        when(achievementProgressRepository.save(any(AchievementProgress.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        List<AchievementResponse> responses = service.getAchievements(member);
+
+        assertThat(responses)
+                .filteredOn(response -> "PERMANENT_MEMBER_APPROVED".equals(response.getKey()))
+                .singleElement()
+                .extracting(AchievementResponse::getProgress, AchievementResponse::getRewardAmount)
+                .containsExactly(1, 30);
+    }
+
     private MyActivitySummaryResponse activitySummary(String totalHours) {
         return MyActivitySummaryResponse.builder()
                 .totalHours(new BigDecimal(totalHours))
