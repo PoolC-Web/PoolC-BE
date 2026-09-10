@@ -23,4 +23,8 @@ public class MemberResponseWithHour {
     public static MemberResponseWithHour of(Member member, BigDecimal hour) {
         return new MemberResponseWithHour(MemberResponse.of(member), hour, member.getIsExcepted());
     }
+
+    public static MemberResponseWithHour of(Member member, BigDecimal hour, boolean isExcepted) {
+        return new MemberResponseWithHour(MemberResponse.of(member), hour, isExcepted);
+    }
 }

@@ -166,9 +166,7 @@ public class Member extends TimestampEntity implements UserDetails {
     }
 
     public void updateIsExcepted() {
-        if (roles.checkIsExcepted()) {
-            isExcepted = true;
-        }
+        isExcepted = roles.checkIsExcepted();
     }
 
     public void applyInterviewSlot(InterviewSlot slot) {
