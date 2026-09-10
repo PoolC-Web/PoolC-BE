@@ -47,7 +47,8 @@ class MemberRolesTest {
         assertThat(roles.getAuthorities()).hasSize(2);
 
         roles = MemberRoles.getDefaultFor(MemberRole.TECHNICIAN);
-        assertThat(roles.getAuthorities()).hasSize(2);
+        assertThat(roles.getAuthorities()).hasSize(3);
+        assertThat(roles.isAdmin()).isTrue();
         assertThat(roles.checkIsExcepted()).isTrue();
     }
 }
