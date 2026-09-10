@@ -52,9 +52,6 @@ public class Member extends TimestampEntity implements UserDetails {
     @Column(name = "password_reset_token_valid_until")
     private LocalDateTime passwordResetTokenValidUntil;
 
-    @Column(name = "profile_image_url", columnDefinition = "varchar(255)")
-    private String profileImageURL;
-
     @Column(name = "introduction", columnDefinition = "varchar(1024)")
     private String introduction;
 
@@ -76,7 +73,7 @@ public class Member extends TimestampEntity implements UserDetails {
     }
 
     @Builder
-    public Member(String UUID, String loginID, String passwordHash, String email, String phoneNumber, String name, String department, String studentID, String passwordResetToken, LocalDateTime passwordResetTokenValidUntil, String profileImageURL, String introduction, Boolean isExcepted, MemberRoles roles) {
+    public Member(String UUID, String loginID, String passwordHash, String email, String phoneNumber, String name, String department, String studentID, String passwordResetToken, LocalDateTime passwordResetTokenValidUntil, String introduction, Boolean isExcepted, MemberRoles roles) {
         this.UUID = UUID;
         this.loginID = loginID;
         this.passwordHash = passwordHash;
@@ -87,7 +84,6 @@ public class Member extends TimestampEntity implements UserDetails {
         this.studentID = studentID;
         this.passwordResetToken = passwordResetToken;
         this.passwordResetTokenValidUntil = passwordResetTokenValidUntil;
-        this.profileImageURL = profileImageURL;
         this.introduction = introduction;
         this.isExcepted = isExcepted;
         this.roles = roles;
@@ -99,7 +95,6 @@ public class Member extends TimestampEntity implements UserDetails {
         this.email = updateMemberRequest.getEmail();
         this.phoneNumber = updateMemberRequest.getPhoneNumber();
         this.introduction = updateMemberRequest.getIntroduction();
-        this.profileImageURL = updateMemberRequest.getProfileImageURL();
     }
 
     public boolean isAcceptedMember() {

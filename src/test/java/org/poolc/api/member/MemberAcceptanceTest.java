@@ -33,7 +33,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         RegisterMemberRequest request = new RegisterMemberRequest("testName", "testId",
                 "testPassword", "testPassword",
                 "test@email.com", "010-1234-4321",
-                "컴퓨터과학과", "2021147500", "자기소개", "https://api.poolc.org/files/%E1%84%83%E1%85%A9%E1%86%BC%E1%84%87%E1%85%A1%E1%86%BC%E1%84%8B%E1%85%A3%E1%86%A8%E1%84%83%E1%85%A9.png");
+                "컴퓨터과학과", "2021147500", "자기소개");
         ExtractableResponse<Response> response = createMemberRequest(request);
 
         assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
@@ -45,7 +45,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         RegisterMemberRequest request = new RegisterMemberRequest("WrongPassword", "WrongPasswordId",
                 "WrongPassword", "testPassword1",
                 "fffff@email.com", "010-1234-9999",
-                "컴퓨터과학과", "2000147500", "자기소개", "https://api.poolc.org/files/%E1%84%83%E1%85%A9%E1%86%BC%E1%84%87%E1%85%A1%E1%86%BC%E1%84%8B%E1%85%A3%E1%86%A8%E1%84%83%E1%85%A9.png");
+                "컴퓨터과학과", "2000147500", "자기소개");
         ExtractableResponse<Response> response = createMemberRequest(request);
 
         assertThat(response.statusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
@@ -57,7 +57,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
         RegisterMemberRequest request = new RegisterMemberRequest("DuplicateName", "DuplicateTestId",
                 "DuplicateTestPassword", "DuplicateTestPassword",
                 "fffff@email.com", "010-1234-9999",
-                "컴퓨터과학과", "2000146500", "자기소개", "https://api.poolc.org/files/%E1%84%83%E1%85%A9%E1%86%BC%E1%84%87%E1%85%A1%E1%86%BC%E1%84%8B%E1%85%A3%E1%86%A8%E1%84%83%E1%85%A9.png");
+                "컴퓨터과학과", "2000146500", "자기소개");
         createMemberRequest(request);
 
         ExtractableResponse<Response> notPass = createMemberRequest(request);
@@ -327,7 +327,7 @@ public class MemberAcceptanceTest extends AcceptanceTest {
     }
 
     public static ExtractableResponse<Response> updateMemberInfoRequest(String accessToken, String name, String password, String passwordCheck, String email, String phoneNumber, String introduction) {
-        UpdateMemberRequest request = new UpdateMemberRequest(name, password, passwordCheck, email, phoneNumber, introduction, "https://api.poolc.org/files/%E1%84%83%E1%85%A9%E1%86%BC%E1%84%87%E1%85%A1%E1%86%BC%E1%84%8B%E1%85%A3%E1%86%A8%E1%84%83%E1%85%A9.png");
+        UpdateMemberRequest request = new UpdateMemberRequest(name, password, passwordCheck, email, phoneNumber, introduction);
 
         return RestAssured
                 .given().log().all()

@@ -70,7 +70,6 @@ public class MemberService {
                         .studentID(values.getStudentID())
                         .passwordResetToken(null)
                         .passwordResetTokenValidUntil(null)
-                        .profileImageURL(values.getProfileImageURL())
                         .introduction(values.getIntroduction())
                         .isExcepted(false)
                         .roles(MemberRoles.getDefaultFor(MemberRole.UNACCEPTED))

@@ -89,7 +89,7 @@ public class MemberResponse implements Serializable {
     }
 
     public static MemberResponse of(Member member) {
-        return new MemberResponse(member.getLoginID(), member.getEmail(), member.getPhoneNumber(), member.getName(), member.getDepartment(), member.getStudentID(), member.getProfileImageURL(), member.getIntroduction(), member.isMember(), member.isAdmin(), member.getIsExcepted(), null, null, null, member.getRole(), member.getBadge());
+        return new MemberResponse(member.getLoginID(), member.getEmail(), member.getPhoneNumber(), member.getName(), member.getDepartment(), member.getStudentID(), null, member.getIntroduction(), member.isMember(), member.isAdmin(), member.getIsExcepted(), null, null, null, member.getRole(), member.getBadge());
     }
 
     public static MemberResponse of(Member member, String profileImageURL) {
@@ -100,7 +100,7 @@ public class MemberResponse implements Serializable {
                                     List<ActivityResponse> hostActivities,
                                     List<ActivityResponse> participantActivities,
                                     List<ProjectResponse> projects) {
-        return of(findMember, loginMember, hostActivities, participantActivities, projects, findMember.getProfileImageURL());
+        return of(findMember, loginMember, hostActivities, participantActivities, projects, null);
     }
 
     public static MemberResponse of(Member findMember, Member loginMember,

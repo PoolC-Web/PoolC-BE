@@ -31,7 +31,7 @@ public class MemberDoc extends ApiDoc {
         RegisterMemberRequest requestValues = new RegisterMemberRequest("exampleName", "exampleLoginID",
                 "examplePassword", "examplePassword",
                 "example@poolc.org", "examplePhoneNumber",
-                "exampleDepartment", "exampleStudentID", "introduction", "/files/profile_placeholder_02.png");
+                "exampleDepartment", "exampleStudentID", "introduction");
         MemberCreateValues createValues = new MemberCreateValues(requestValues);
 
         doNothing().when(memberService).create(createValues);
@@ -48,7 +48,6 @@ public class MemberDoc extends ApiDoc {
                                 fieldWithPath("phoneNumber").type(JsonFieldType.STRING).description("휴대폰 번호"),
                                 fieldWithPath("department").type(JsonFieldType.STRING).description("학과/학부"),
                                 fieldWithPath("studentID").type(JsonFieldType.STRING).description("학번"),
-                                fieldWithPath("profileImageURL").type(JsonFieldType.STRING).description("프사 파일 주소"),
                                 fieldWithPath("introduction").type(JsonFieldType.STRING).description("자기소개")
                         )));
     }
@@ -68,7 +67,6 @@ public class MemberDoc extends ApiDoc {
 //                .studentID("2014147500")
 //                .passwordResetToken(null)
 //                .passwordResetTokenValidUntil(null)
-//                .profileImageURL("/files/profile_placeholder_02.png")
 //                .introduction("나는 이소정. 차기 풀씨 회장")
 //                .isExcepted(false)
 //                .roles(MemberRoles.getDefaultFor(MemberRole.ADMIN))
@@ -87,7 +85,6 @@ public class MemberDoc extends ApiDoc {
 //                                fieldWithPath("name").type(JsonFieldType.STRING).description("회원 이름"),
 //                                fieldWithPath("department").type(JsonFieldType.STRING).description("학과"),
 //                                fieldWithPath("studentID").type(JsonFieldType.STRING).description("학번"),
-//                                fieldWithPath("profileImageURL").type(JsonFieldType.STRING).description("프로필 사진 주소"),
 //                                fieldWithPath("introduction").type(JsonFieldType.STRING).description("자기소개"),
 //                                fieldWithPath("isActivated").type(JsonFieldType.BOOLEAN).description("활동 회원 여부"),
 //                                fieldWithPath("isAdmin").type(JsonFieldType.BOOLEAN).description("관리자 여부"),

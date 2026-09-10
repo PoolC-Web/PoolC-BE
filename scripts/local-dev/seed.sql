@@ -33,14 +33,14 @@ VALUES (
   'https://forms.gle/dev-poolc-apply'
 );
 
-INSERT INTO member (uuid, created_at, updated_at, department, email, introduction, is_excepted, login_id, name, password_hash, phone_number, profile_image_url, student_id)
+INSERT INTO member (uuid, created_at, updated_at, department, email, introduction, is_excepted, login_id, name, password_hash, phone_number, student_id)
 VALUES
-  ('00000000-0000-0000-0000-000000000001', now(), now(), '컴퓨터학부', 'admin@poolc.dev', '로컬 개발용 임원진 계정입니다.', false, 'admin', '개발 관리자', '$argon2id$v=19$m=4096,t=3,p=1$sSta6jFDxAkJwmn6fqv6Hg$Srgwhr4dm2whPhuIbVx3HhsGkNeTM4pPtHHbYX03w+I', '010-0000-0001', '', '20260001'),
-  ('00000000-0000-0000-0000-000000000002', now(), now(), '소프트웨어학부', 'president@poolc.dev', '로컬 개발용 회장 계정입니다.', false, 'president', '개발 회장', '$argon2id$v=19$m=4096,t=3,p=1$sSta6jFDxAkJwmn6fqv6Hg$Srgwhr4dm2whPhuIbVx3HhsGkNeTM4pPtHHbYX03w+I', '010-0000-0002', '', '20260002'),
-  ('00000000-0000-0000-0000-000000000003', now(), now(), '컴퓨터학부', 'member1@poolc.dev', '세미나와 프로젝트에 참여하는 개발용 일반 회원입니다.', false, 'member1', '개발 회원1', '$argon2id$v=19$m=4096,t=3,p=1$sSta6jFDxAkJwmn6fqv6Hg$Srgwhr4dm2whPhuIbVx3HhsGkNeTM4pPtHHbYX03w+I', '010-0000-0003', '', '20260003'),
-  ('00000000-0000-0000-0000-000000000004', now(), now(), 'AI융합학부', 'member2@poolc.dev', '백엔드와 인프라에 관심 있는 개발용 일반 회원입니다.', false, 'member2', '개발 회원2', '$argon2id$v=19$m=4096,t=3,p=1$sSta6jFDxAkJwmn6fqv6Hg$Srgwhr4dm2whPhuIbVx3HhsGkNeTM4pPtHHbYX03w+I', '010-0000-0004', '', '20260004'),
-  ('00000000-0000-0000-0000-000000000005', now(), now(), '글로벌미디어학부', 'member3@poolc.dev', '디자인과 프론트엔드에 관심 있는 개발용 일반 회원입니다.', false, 'member3', '개발 회원3', '$argon2id$v=19$m=4096,t=3,p=1$sSta6jFDxAkJwmn6fqv6Hg$Srgwhr4dm2whPhuIbVx3HhsGkNeTM4pPtHHbYX03w+I', '010-0000-0005', '', '20260005'),
-  ('00000000-0000-0000-0000-000000000006', now(), now(), '컴퓨터학부', 'pending@poolc.dev', '승인 전 회원 화면 확인용 계정입니다.', false, 'pending', '승인대기 회원', '$argon2id$v=19$m=4096,t=3,p=1$sSta6jFDxAkJwmn6fqv6Hg$Srgwhr4dm2whPhuIbVx3HhsGkNeTM4pPtHHbYX03w+I', '010-0000-0006', '', '20260006');
+  ('00000000-0000-0000-0000-000000000001', now(), now(), '컴퓨터학부', 'admin@poolc.dev', '로컬 개발용 임원진 계정입니다.', false, 'admin', '개발 관리자', '$argon2id$v=19$m=4096,t=3,p=1$sSta6jFDxAkJwmn6fqv6Hg$Srgwhr4dm2whPhuIbVx3HhsGkNeTM4pPtHHbYX03w+I', '010-0000-0001', '20260001'),
+  ('00000000-0000-0000-0000-000000000002', now(), now(), '소프트웨어학부', 'president@poolc.dev', '로컬 개발용 회장 계정입니다.', false, 'president', '개발 회장', '$argon2id$v=19$m=4096,t=3,p=1$sSta6jFDxAkJwmn6fqv6Hg$Srgwhr4dm2whPhuIbVx3HhsGkNeTM4pPtHHbYX03w+I', '010-0000-0002', '20260002'),
+  ('00000000-0000-0000-0000-000000000003', now(), now(), '컴퓨터학부', 'member1@poolc.dev', '세미나와 프로젝트에 참여하는 개발용 일반 회원입니다.', false, 'member1', '개발 회원1', '$argon2id$v=19$m=4096,t=3,p=1$sSta6jFDxAkJwmn6fqv6Hg$Srgwhr4dm2whPhuIbVx3HhsGkNeTM4pPtHHbYX03w+I', '010-0000-0003', '20260003'),
+  ('00000000-0000-0000-0000-000000000004', now(), now(), 'AI융합학부', 'member2@poolc.dev', '백엔드와 인프라에 관심 있는 개발용 일반 회원입니다.', false, 'member2', '개발 회원2', '$argon2id$v=19$m=4096,t=3,p=1$sSta6jFDxAkJwmn6fqv6Hg$Srgwhr4dm2whPhuIbVx3HhsGkNeTM4pPtHHbYX03w+I', '010-0000-0004', '20260004'),
+  ('00000000-0000-0000-0000-000000000005', now(), now(), '글로벌미디어학부', 'member3@poolc.dev', '디자인과 프론트엔드에 관심 있는 개발용 일반 회원입니다.', false, 'member3', '개발 회원3', '$argon2id$v=19$m=4096,t=3,p=1$sSta6jFDxAkJwmn6fqv6Hg$Srgwhr4dm2whPhuIbVx3HhsGkNeTM4pPtHHbYX03w+I', '010-0000-0005', '20260005'),
+  ('00000000-0000-0000-0000-000000000006', now(), now(), '컴퓨터학부', 'pending@poolc.dev', '승인 전 회원 화면 확인용 계정입니다.', false, 'pending', '승인대기 회원', '$argon2id$v=19$m=4096,t=3,p=1$sSta6jFDxAkJwmn6fqv6Hg$Srgwhr4dm2whPhuIbVx3HhsGkNeTM4pPtHHbYX03w+I', '010-0000-0006', '20260006');
 
 INSERT INTO roles (member_uuid, roles) VALUES
   ('00000000-0000-0000-0000-000000000001', 'ADMIN'),

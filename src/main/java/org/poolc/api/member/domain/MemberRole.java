@@ -58,6 +58,11 @@ public enum MemberRole implements Role {
     },
     TECHNICIAN {
         @Override
+        public boolean isAdmin() {
+            return true;
+        }
+
+        @Override
         public boolean isHideInfo() {
             return false;
         }
