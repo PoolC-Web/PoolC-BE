@@ -29,8 +29,8 @@ public class BookController {
     private final BookClient bookClient;
     private final BookService bookService;
 
-    @GetMapping("/naver/search")
-    public ResponseEntity<List<BookApiResponse>> searchBooksFromAPI(@RequestParam String query,
+    @GetMapping("/kakao/search")
+    public ResponseEntity<List<BookApiResponse>> searchBooksFromKakao(@RequestParam String query,
                                                              @RequestParam(value = "page", defaultValue = "0") @Min(0) Integer page) {
         try {
             return new ResponseEntity<>(bookClient.searchBooks(query, page), HttpStatus.OK);

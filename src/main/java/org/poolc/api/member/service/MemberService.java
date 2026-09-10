@@ -7,6 +7,7 @@ import org.poolc.api.activity.dto.ActivityResponse;
 import org.poolc.api.activity.repository.SessionRepository;
 import org.poolc.api.activity.service.ActivityService;
 import org.poolc.api.auth.exception.UnauthorizedException;
+import org.poolc.api.auth.exception.UnauthenticatedException;
 import org.poolc.api.auth.infra.PasswordHashProvider;
 import org.poolc.api.common.domain.YearSemester;
 import org.poolc.api.member.domain.Member;
@@ -77,6 +78,9 @@ public class MemberService {
     }
 
     public void checkMe(Member loginMember) {
+        if (loginMember == null) {
+            throw new UnauthenticatedException("로그인이 필요합니다.");
+        }
         Poolc poolc = poolcService.get();
         if (!poolc.checkSubscriptionPeriod() && !loginMember.isAcceptedMember()) {
             throw new UnauthorizedException("인증받지 않은 회원입니다.");
@@ -119,6 +123,9 @@ public class MemberService {
     }
 
     public void checkGetRoles(Member loginMember) {
+        if (loginMember == null) {
+            throw new UnauthenticatedException("로그인이 필요합니다.");
+        }
         Poolc poolc = poolcService.get();
         if (!poolc.checkSubscriptionPeriod() && !loginMember.isAcceptedMember()) {
             throw new UnauthorizedException("인증받지 않은 회원입니다.");

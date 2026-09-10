@@ -16,7 +16,7 @@ import java.util.List;
 public class CreateBookRequest {
 
     @NotBlank
-    @Size(max = 30)
+    @Size(max = 255)
     private String title;
 
     @NotBlank

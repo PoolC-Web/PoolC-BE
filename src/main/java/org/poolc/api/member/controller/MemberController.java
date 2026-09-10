@@ -162,6 +162,12 @@ public class MemberController {
         return ResponseEntity.ok().build();
     }
 
+    @DeleteMapping(path = "/{loginID}")
+    public ResponseEntity<Void> deleteMember(@PathVariable String loginID) {
+        memberService.deleteMember(loginID);
+        return ResponseEntity.ok().build();
+    }
+
     private void checkIsValidMemberCreateInput(RegisterMemberRequest request) {
         if (!request.getPassword().equals(request.getPasswordCheck())) {
             throw new IllegalArgumentException("passwords should match");
