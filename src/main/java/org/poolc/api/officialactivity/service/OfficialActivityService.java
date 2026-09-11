@@ -9,6 +9,7 @@ import org.poolc.api.officialactivity.domain.OfficialActivityParticipantSource;
 import org.poolc.api.officialactivity.domain.OfficialActivityQrAttendance;
 import org.poolc.api.officialactivity.domain.OfficialActivityQrToken;
 import org.poolc.api.officialactivity.dto.CreateOfficialActivityRequest;
+import org.poolc.api.officialactivity.dto.OfficialActivityCheckInResponse;
 import org.poolc.api.officialactivity.dto.OfficialActivityParticipantResponse;
 import org.poolc.api.officialactivity.dto.OfficialActivityQrResponse;
 import org.poolc.api.officialactivity.dto.OfficialActivityResponse;
@@ -22,11 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.Base64;
+import java.util.Collections;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -60,9 +61,12 @@ public class OfficialActivityService {
                 .distinct()
                 .collect(Collectors.toList());
         Map<String, Member> membersByLoginId = membersByLoginId(memberLoginIds);
+        Map<Long, Map<String, LocalDateTime>> qrAttendanceTimesByActivityId = qrAttendanceTimesByActivityId(
+                activities.stream().map(OfficialActivity::getId).collect(Collectors.toList()));
         return activities.stream()
                 .sorted(Comparator.comparing(OfficialActivity::getCreatedAt).reversed())
-                .map(activity -> responseOf(activity, membersByLoginId))
+                .map(activity -> responseOf(activity, membersByLoginId,
+                        qrAttendanceTimesByActivityId.getOrDefault(activity.getId(), Collections.emptyMap())))
                 .collect(Collectors.toList());
     }
 
@@ -94,25 +98,46 @@ public class OfficialActivityService {
         OfficialActivity activity = findActivity(id);
         qrTokenRepository.findByOfficialActivityId(id).ifPresent(qrTokenRepository::delete);
         String token = java.util.UUID.randomUUID().toString().replace("-", "");
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(2);
-        qrTokenRepository.save(new OfficialActivityQrToken(token, activity, expiresAt));
+        activity.enableQr();
+        qrTokenRepository.save(new OfficialActivityQrToken(token, activity));
+        return qrResponseOf(token);
+    }
+
+    @Transactional(readOnly = true)
+    public OfficialActivityQrResponse getQr(Long id) {
+        OfficialActivity activity = findActivity(id);
+        if (!activity.isQrEnabled()) {
+            throw new ConflictException("현재 출석 QR이 꺼져 있습니다.");
+        }
+        OfficialActivityQrToken qrToken = qrTokenRepository.findByOfficialActivityId(id)
+                .orElseThrow(() -> new ConflictException("출석 QR을 찾을 수 없습니다."));
+        return qrResponseOf(qrToken.getToken());
+    }
+
+    private OfficialActivityQrResponse qrResponseOf(String token) {
         String checkInUrl = checkInBaseUrl + "/" + token;
         String imageDataUrl = "data:image/png;base64," + Base64.getEncoder().encodeToString(new Qr(checkInUrl).createQrImage());
-        return new OfficialActivityQrResponse(checkInUrl, imageDataUrl, expiresAt);
+        return new OfficialActivityQrResponse(checkInUrl, imageDataUrl);
     }
 
     @Transactional
-    public OfficialActivityResponse checkIn(String token, String memberLoginId) {
-        OfficialActivityQrToken qrToken = qrTokenRepository.findById(token)
-                .orElseThrow(() -> new ConflictException("유효하지 않은 출석 QR입니다."));
-        if (qrToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new ConflictException("출석 QR이 만료되었습니다.");
-        }
-        OfficialActivity activity = qrToken.getOfficialActivity();
-        activity.addMemberLoginId(memberLoginId);
-        qrAttendanceRepository.findByOfficialActivityIdAndMemberLoginId(activity.getId(), memberLoginId)
-                .orElseGet(() -> qrAttendanceRepository.save(new OfficialActivityQrAttendance(activity, memberLoginId)));
+    public OfficialActivityResponse disableQr(Long id) {
+        OfficialActivity activity = findActivity(id);
+        activity.disableQr();
+        qrTokenRepository.findByOfficialActivityId(id).ifPresent(qrTokenRepository::delete);
         return responseOf(activity, membersByLoginId(activity.getMemberLoginIds()));
+    }
+
+    @Transactional
+    public OfficialActivityCheckInResponse checkIn(String token, String memberLoginId) {
+        OfficialActivityQrTokenRepository.CheckInToken qrToken = qrTokenRepository.findCheckInTokenByToken(token)
+                .orElseThrow(() -> new ConflictException("유효하지 않은 출석 QR입니다."));
+        if (!qrToken.getQrEnabled()) {
+            throw new ConflictException("현재 출석 QR이 꺼져 있습니다.");
+        }
+        officialActivityRepository.insertMemberIfAbsent(qrToken.getActivityId(), memberLoginId);
+        boolean alreadyCheckedIn = qrAttendanceRepository.insertIfAbsent(qrToken.getActivityId(), memberLoginId) == 0;
+        return new OfficialActivityCheckInResponse(alreadyCheckedIn);
     }
 
     private OfficialActivity findActivity(Long id) {
@@ -126,22 +151,34 @@ public class OfficialActivityService {
     }
 
     private OfficialActivityResponse responseOf(OfficialActivity activity, Map<String, Member> membersByLoginId) {
+        return responseOf(activity, membersByLoginId, qrAttendanceTimesByActivityId(List.of(activity.getId()))
+                .getOrDefault(activity.getId(), Collections.emptyMap()));
+    }
+
+    private OfficialActivityResponse responseOf(OfficialActivity activity, Map<String, Member> membersByLoginId,
+                                                Map<String, LocalDateTime> qrAttendanceTimesByLoginId) {
         List<String> memberNames = activity.getMemberLoginIds().stream()
                 .map(membersByLoginId::get)
                 .filter(member -> member != null)
                 .map(Member::getName)
                 .collect(Collectors.toList());
-        Set<String> qrAttendanceLoginIds = qrAttendanceRepository.findByOfficialActivityIdIn(List.of(activity.getId())).stream()
-                .map(OfficialActivityQrAttendance::getMemberLoginId)
-                .collect(Collectors.toSet());
         List<OfficialActivityParticipantResponse> participants = activity.getMemberLoginIds().stream()
                 .map(loginId -> {
                     Member member = membersByLoginId.get(loginId);
+                    LocalDateTime qrCheckedInAt = qrAttendanceTimesByLoginId.get(loginId);
                     return new OfficialActivityParticipantResponse(loginId, member == null ? null : member.getName(),
                             member == null ? null : member.getDepartment(), member == null ? null : member.getStudentID(),
-                            member == null ? null : member.getPhoneNumber(), qrAttendanceLoginIds.contains(loginId) ? OfficialActivityParticipantSource.QR : OfficialActivityParticipantSource.MANUAL);
+                            member == null ? null : member.getPhoneNumber(), qrCheckedInAt != null ? OfficialActivityParticipantSource.QR : OfficialActivityParticipantSource.MANUAL,
+                            qrCheckedInAt != null ? qrCheckedInAt : activity.getCreatedAt());
                 })
                 .collect(Collectors.toList());
         return new OfficialActivityResponse(activity, memberNames, participants);
+    }
+
+    private Map<Long, Map<String, LocalDateTime>> qrAttendanceTimesByActivityId(List<Long> activityIds) {
+        return qrAttendanceRepository.findByOfficialActivityIdIn(activityIds).stream()
+                .collect(Collectors.groupingBy(
+                        attendance -> attendance.getOfficialActivity().getId(),
+                        Collectors.toMap(OfficialActivityQrAttendance::getMemberLoginId, OfficialActivityQrAttendance::getCheckedInAt)));
     }
 }
