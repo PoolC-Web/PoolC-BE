@@ -16,6 +16,7 @@ public class OfficialActivityResponse {
     private final LocalDate activityDate;
     private final String title;
     private final BigDecimal recognizedHours;
+    private final boolean qrEnabled;
 
     public OfficialActivityResponse(OfficialActivity activity, List<String> memberNames, List<OfficialActivityParticipantResponse> participants) {
         this.id = activity.getId();
@@ -25,5 +26,6 @@ public class OfficialActivityResponse {
         this.activityDate = activity.getActivityDate();
         this.title = activity.getTitle();
         this.recognizedHours = activity.getRecognizedHours();
+        this.qrEnabled = activity.isQrEnabled();
     }
 }

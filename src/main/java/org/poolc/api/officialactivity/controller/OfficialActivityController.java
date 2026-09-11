@@ -2,6 +2,7 @@ package org.poolc.api.officialactivity.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.poolc.api.officialactivity.dto.CreateOfficialActivityRequest;
+import org.poolc.api.officialactivity.dto.OfficialActivityCheckInResponse;
 import org.poolc.api.officialactivity.dto.OfficialActivityResponse;
 import org.poolc.api.officialactivity.dto.OfficialActivityQrResponse;
 import org.poolc.api.member.domain.Member;
@@ -52,8 +53,18 @@ public class OfficialActivityController {
         return ResponseEntity.ok(officialActivityService.generateQr(id));
     }
 
+    @GetMapping("/{id}/qr")
+    public ResponseEntity<OfficialActivityQrResponse> getQr(@PathVariable Long id) {
+        return ResponseEntity.ok(officialActivityService.getQr(id));
+    }
+
+    @DeleteMapping("/{id}/qr")
+    public ResponseEntity<OfficialActivityResponse> disableQr(@PathVariable Long id) {
+        return ResponseEntity.ok(officialActivityService.disableQr(id));
+    }
+
     @PostMapping("/check-in/{token}")
-    public ResponseEntity<OfficialActivityResponse> checkIn(@PathVariable String token, @AuthenticationPrincipal Member member) {
+    public ResponseEntity<OfficialActivityCheckInResponse> checkIn(@PathVariable String token, @AuthenticationPrincipal Member member) {
         return ResponseEntity.ok(officialActivityService.checkIn(token, member.getLoginID()));
     }
 

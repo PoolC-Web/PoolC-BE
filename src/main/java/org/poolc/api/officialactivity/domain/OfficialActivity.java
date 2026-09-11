@@ -42,6 +42,9 @@ public class OfficialActivity extends TimestampEntity {
     @Column(name = "recognized_hours", nullable = false, precision = 6, scale = 1)
     private BigDecimal recognizedHours;
 
+    @Column(name = "qr_enabled", nullable = false)
+    private boolean qrEnabled;
+
     protected OfficialActivity() {
     }
 
@@ -64,5 +67,13 @@ public class OfficialActivity extends TimestampEntity {
         if (!memberLoginIds.contains(memberLoginId)) {
             memberLoginIds.add(memberLoginId);
         }
+    }
+
+    public void enableQr() {
+        this.qrEnabled = true;
+    }
+
+    public void disableQr() {
+        this.qrEnabled = false;
     }
 }
