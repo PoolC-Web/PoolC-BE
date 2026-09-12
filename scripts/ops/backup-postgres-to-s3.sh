@@ -7,7 +7,17 @@ readonly AWS_REGION="${AWS_REGION:-ap-northeast-2}"
 readonly AWS_PROFILE="${AWS_PROFILE:-default}"
 readonly AWS_BIN="${AWS_BIN:-/usr/local/bin/aws}"
 readonly DATABASE_NAME="${DATABASE_NAME:-postgres_kr}"
-readonly LOCK_FILE="${LOCK_FILE:-/tmp/poolc-postgres-backup.lock}"
+readonly LOCK_DIRECTORY="${LOCK_DIRECTORY:-/var/lock/poolc}"
+readonly LOCK_FILE="${LOCK_FILE:-${LOCK_DIRECTORY}/postgres-backup.lock}"
+
+if [[ "$EUID" -ne 0 ]]; then
+  echo "This backup script must run as root." >&2
+  exit 1
+fi
+
+# Keep the lock outside sticky /tmp. A lock file created by another account in
+# /tmp can prevent root's cron job from reopening it on hardened Linux hosts.
+install -d -m 700 -o root -g root "$LOCK_DIRECTORY"
 
 exec 9>"$LOCK_FILE"
 flock -n 9 || {
