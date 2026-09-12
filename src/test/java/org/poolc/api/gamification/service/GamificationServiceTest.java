@@ -394,9 +394,9 @@ class GamificationServiceTest {
     }
 
     @Test
-    void permanentAchievementRemainsCompletedAfterTheConditionChanges() {
+    void seasonRoleAchievementRemainsCompletedForTheCurrentSemesterAfterTheRoleChanges() {
         AchievementProgress previouslyCompleted = new AchievementProgress(
-                member, "PERMANENT_ADMIN", "PERMANENT", 1);
+                member, "SEASON_ADMIN", currentSemester(), 1);
         when(member.getRole()).thenReturn("MEMBER");
         when(memberService.getMyActivitySummary(member)).thenReturn(activitySummary("0"));
         when(achievementProgressRepository.findAllByMemberUuid("member-uuid"))
@@ -405,7 +405,7 @@ class GamificationServiceTest {
         List<AchievementResponse> responses = service.getAchievements(member);
 
         assertThat(responses)
-                .filteredOn(response -> "PERMANENT_ADMIN".equals(response.getKey()))
+                .filteredOn(response -> "SEASON_ADMIN".equals(response.getKey()))
                 .singleElement()
                 .extracting(AchievementResponse::getProgress)
                 .isEqualTo(1);

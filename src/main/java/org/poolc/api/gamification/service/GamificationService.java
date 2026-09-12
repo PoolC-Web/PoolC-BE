@@ -89,6 +89,8 @@ public class GamificationService {
             new AchievementDefinition("SEASON_PARTICIPATION", "SEASON", "이번 학기 활동 참여", "이번 학기 세미나/스터디에 참여하세요.", 1, BallType.NORMAL, 5),
             new AchievementDefinition("SEASON_SCRAPS", "SEASON", "이번 학기 스크랩 5개", "이번 학기에 게시글 5개를 스크랩하세요.", 5, BallType.NORMAL, 5),
             new AchievementDefinition("SEASON_COLLECTION", "SEASON", "이번 학기 포켓몬 5종 수집", "이번 학기에 포켓몬 5종을 수집하세요.", 5, BallType.NORMAL, 10),
+            new AchievementDefinition("SEASON_ADMIN", "SEASON", "임원진 되기", "이번 학기에 임원진 역할을 획득하세요.", 1, BallType.NORMAL, 30),
+            new AchievementDefinition("SEASON_TECHNICIAN", "SEASON", "기여자 되기", "이번 학기에 기여자 역할을 획득하세요.", 1, BallType.NORMAL, 30),
             new AchievementDefinition("PERMANENT_MEMBER_APPROVED", "PERMANENT", "가입 승인 완료", "PoolC 회원으로 승인되었어요.", 1, BallType.NORMAL, 30),
             new AchievementDefinition("PERMANENT_PROFILE", "PERMANENT", "프로필 완성", "프로필 정보를 완성하세요.", 1, BallType.NORMAL, 5),
             new AchievementDefinition("PERMANENT_ATTENDANCE", "PERMANENT", "첫 활동 출석", "첫 활동에 출석하세요.", 1, BallType.NORMAL, 5),
@@ -99,8 +101,6 @@ public class GamificationService {
             new AchievementDefinition("PERMANENT_REGULATION", "PERMANENT", "회칙 읽어보기", "PoolC 동아리 회칙을 확인하세요.", 1, BallType.NORMAL, 10),
             new AchievementDefinition("PERMANENT_GITHUB", "PERMANENT", "GitHub 접속하기", "PoolC GitHub 조직을 방문하세요.", 1, BallType.NORMAL, 10),
             new AchievementDefinition("PERMANENT_FEATURED_COLLECTIBLE", "PERMANENT", "포켓볼 대표 캐릭 설정하기", "대표 포켓몬을 지정하세요.", 1, BallType.NORMAL, 10),
-            new AchievementDefinition("PERMANENT_ADMIN", "PERMANENT", "임원진 되기", "임원진 역할을 획득하세요.", 1, BallType.NORMAL, 30),
-            new AchievementDefinition("PERMANENT_TECHNICIAN", "PERMANENT", "기여자 되기", "기여자 역할을 획득하세요.", 1, BallType.NORMAL, 30),
             new AchievementDefinition("PERMANENT_HOST_3", "PERMANENT", "세미나 3회 개최", "세미나를 3회 개최하세요.", 3, BallType.NORMAL, 15),
             new AchievementDefinition("PERMANENT_HOST_6", "PERMANENT", "세미나 6회 개최", "세미나를 6회 개최하세요.", 6, BallType.NORMAL, 20),
             new AchievementDefinition("PERMANENT_HOST_10", "PERMANENT", "세미나 10회 개최", "세미나를 10회 개최하세요.", 10, BallType.NORMAL, 35),
@@ -288,6 +288,8 @@ public class GamificationService {
         result.put("SEASON_PARTICIPATION", seasonParticipation);
         result.put("SEASON_SCRAPS", seasonScraps);
         result.put("SEASON_COLLECTION", seasonCollection.size());
+        result.put("SEASON_ADMIN", firstAdmin);
+        result.put("SEASON_TECHNICIAN", firstTechnician);
         result.put("PERMANENT_MEMBER_APPROVED", memberApproved);
         result.put("PERMANENT_PROFILE", firstProfile);
         result.put("PERMANENT_ATTENDANCE", allAttendance > 0 ? 1 : 0);
@@ -298,8 +300,6 @@ public class GamificationService {
         result.put("PERMANENT_REGULATION", regulationRead);
         result.put("PERMANENT_GITHUB", githubVisited);
         result.put("PERMANENT_FEATURED_COLLECTIBLE", featuredCollectible);
-        result.put("PERMANENT_ADMIN", firstAdmin);
-        result.put("PERMANENT_TECHNICIAN", firstTechnician);
         result.put("PERMANENT_HOST_3", hostedSeminars);
         result.put("PERMANENT_HOST_6", hostedSeminars);
         result.put("PERMANENT_HOST_10", hostedSeminars);
