@@ -66,8 +66,4 @@ upload_backup() {
 
 upload_backup "postgres/daily/${date_path}"
 
-if [[ "$(date -u +%d)" == "01" ]]; then
-  upload_backup "postgres/monthly/$(date -u +%Y/%m)"
-fi
-
 logger -t poolc-db-backup "completed backup ${timestamp}"
